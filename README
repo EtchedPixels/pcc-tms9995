@@ -1,0 +1,19 @@
+TMS 9995 C Compiler Project
+
+This is a porting project based around the ANSI pcc compiler maintained by
+Anders Magnusson. The original still lives in CVS so I'm keeping my working
+tree in something a little less retro.
+
+To build
+
+autoconf
+./configure --target=tms9995-fuzix
+make
+
+and it should build you a ccom and probably then error about a ccom2.
+
+At this point only the compiler phase is relevant and there are still some
+changes needed to the matching as9995 (in the CC68 tree for ... reasons ... )
+to move beyond the visual inspection stage.
+
+
