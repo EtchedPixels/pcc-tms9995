@@ -81,8 +81,9 @@ offstar(NODE *p, int shape)
 	}
 	if (inctree(p)) /* Do post-inc conversion */
 		return;
-
-	/* FIXME: for some reason this blows up with the myormake code */
+#if 0
+	/* This breaks for some reason I don't yet understand and leaves us
+	   with an unresolved UMUL in the table processing */
 	if( p->n_op == PLUS || p->n_op == MINUS ){
 		if (p->n_right->n_op == ICON) {
 			if (isreg(p->n_left) == 0)
@@ -91,6 +92,7 @@ offstar(NODE *p, int shape)
 			return;
 		}
 	}
+#endif
 	(void)geninsn(p, INAREG);
 }
 
@@ -100,7 +102,6 @@ offstar(NODE *p, int shape)
 void
 myormake(NODE *p)
 {
-#if 0
 	NODE *q = p->n_left;
 
 	if (x2debug) {
@@ -132,7 +133,6 @@ myormake(NODE *p)
 		fwalk(p, e2print, 0);
 	}
 	nfree(q);
-#endif	
 }
 
 /*
