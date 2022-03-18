@@ -90,6 +90,15 @@ case "$target_os" in
 	esac
 	;;
 
+    fuzix)
+	targos=fuzix
+	abi=aout
+	case "$target_cpu" in
+	    tms9995) targmach=tms9995 endian=big ;;
+	esac
+	wchar_type=USHORT
+	;;
+
     linux-android*)
 	targos=android
 	abi=elf
