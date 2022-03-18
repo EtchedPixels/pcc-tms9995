@@ -251,7 +251,7 @@ nspecial(struct optab *q)
 			static struct rspecial s[] = {
 			    { NEVER, R1 }, { NEVER, R0 }, { NRIGHT, R0 },
 			    { NOLEFT, R0 }, { NOLEFT, R2 }, { NORIGHT, R2 },
-			    { NEVER, R2 },
+			    { NEVER, R2 }, { 0 }
 			};
 			return s;
 		}

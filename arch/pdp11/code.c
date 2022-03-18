@@ -183,7 +183,7 @@ funcode(NODE *p)
 {
 	NODE *r, *l;
 
-	/* Fix function call arguments. On x86, just add funarg */
+	/* Fix function call arguments. On pdp11, just add funarg */
 	for (r = p->n_right; r->n_op == CM; r = r->n_left) {
 		if (r->n_right->n_op != STARG)
 			r->n_right = block(FUNARG, r->n_right, NIL,
