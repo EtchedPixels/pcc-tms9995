@@ -35,8 +35,8 @@
  */
 #define makecc(val,i)	lastcon = i ? (val<<8)|lastcon : val
 
-#define ARGINIT		48	/* # bits above r5 where arguments start */
-#define AUTOINIT	(-16)	/* # bits below r5 where automatics start */
+#define ARGINIT		48	/* # bits above r7 where arguments start */
+#define AUTOINIT	(-16)	/* # bits below r7 where automatics start */
 
 /*
  * Storage space requirements
@@ -146,14 +146,14 @@ typedef long long OFFSZ;
  *
  * To get started we are not using all the registers
  */
-#define	R0	000	/* Scratch and return register */
-#define	R1	001	/* Scratch and secondary return register */
+#define	R0	000	/* Scratch and secondary return register */
+#define	R1	001	/* Scratch and return register */
 #define	R2	002	/* Scratch register */
 #define	R3	003	/* Scratch register */
-#define	R4	004	/* Scratch register */
-#define	R5	005	/* Frame pointer */
+#define	R4	004	/* Scratch register or register variable */
+#define	R5	005	/* Scratch register or register variable */
 #define	SP	006	/* Stack pointer */
-#define	PC	007	/* Program counter */
+#define R7	007	/* Frame pointer */
 
 #define	R01	010
 #define	R12	011
@@ -170,7 +170,7 @@ typedef long long OFFSZ;
 #define	MAXREGS	034	/* 28 registers */
 
 #define	RSTATUS	\
-	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|PERMREG, 0, 0, SAREG|PERMREG, \
+	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|PERMREG, SAREG|PERMREG, 0, 0, \
 	SBREG, SBREG, SBREG, SBREG, 0, 0, 0, 0,		\
 	SCREG|TEMPREG, 0, 0, 0, 0, 0, 0, 0,		\
 	SDREG, SDREG, SDREG, SDREG,
@@ -234,7 +234,7 @@ int COLORMAP(int c, int *r);
 //#define R2REGS	1	/* permit double indexing */
 
 /* XXX - to die */
-#define FPREG	R5	/* frame pointer */
+#define FPREG	R7	/* frame pointer */
 #define STKREG	SP	/* stack pointer */
 
 /* A bunch of specials to make life easier for tms9995

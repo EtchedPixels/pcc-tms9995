@@ -57,28 +57,28 @@ prologue(struct interpass_prolog *ipp)
 	printf("dect	r6\n");
 	printf("mov	r11,*r6\n");
 	printf("dect	r6\n");
-	printf("mov	r5,*r6\n");
+	printf("mov	r7,*r6\n");
 
 	/* Allow for the frame pointer and r11 save */
 	addto = p2maxautooff - 2;
 	if (addto & 1)
 		addto++;
 
-	/* We juggle these around a bit so that r5 is pointing to the
-	   first value not to the saved old r5. This makes our first
-	   stacked value accessible via *r5 which saves us a word (and
+	/* We juggle these around a bit so that r7 is pointing to the
+	   first value not to the saved old r7. This makes our first
+	   stacked value accessible via *r7 which saves us a word (and
 	   a bunch of cycles) a reference */
 
 	if (addto == 2) {
 		printf("dect	r6\n");
 		/* Set up frame pointer */
-		printf("mov	r6, r5\n");
+		printf("mov	r6, r7\n");
 	} else {
 		/* Set up frame pointer */
-		printf("mov	r6, r5\n");
+		printf("mov	r6, r7\n");
 		if (addto > 0)
 			printf("ai	%d,r6\n", -addto);
-		printf("dect	r5\n");
+		printf("dect	r7\n");
 	}
 
 	/* Save old register variables below the frame */
@@ -678,7 +678,7 @@ COLORMAP(int c, int *r)
 char *rnames[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 	"r01", "r12", "r23", "r34", "XXX", "XXX", "XXX", "XXX",
-	"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "XXX", "XXX",
+	"fr0", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
 };
 
 /*
