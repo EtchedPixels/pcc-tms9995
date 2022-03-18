@@ -1,0 +1,107 @@
+TMS9995 Backend
+
+The TMS99xx series are a series of processors with a roughly symmetrical
+instruction set and a 16 working register set at a configurable memory base,
+plus 3 physical registers.
+
+The asymmetry in the registers is as follows
+
+R13/R14/R15 are used for workspace switching. The compiler does not use this
+feature.
+
+R12 is used to index some I/O addressing. The compiler does not use this feature
+directly.
+
+R11 is the link register for a subroutine call. The compiler uses this.
+
+R0 cannot be used for indexing with offset.
+
+R0 is the only register that may be used as a shift index
+
+R0/R1 are hardwired into signed multiply/divide and also float.
+
+R2/R3 are also used for 64bit float
+
+There is no stack. The compiler constructs its own in software using R6 as
+the stack pointer and R5 as the frame pointer.
+
+Architectural Limits
+
+The processor is word oriented, and many versions are 16bit bus. Many operations
+do not have a byte form. Byte operations use the upper half of the register and
+generally offer no performance gain.
+
+The TMS9995 only has 256 bytes of fast 16bit internal RAM and the workspace
+needs to live within it. For this reason the compiler does not use the classic
+TI990 approach of using a stack full of workspace chains and BLWP/RTWP.
+
+There are no carry based operations beyond branches. This causes problems with
+code generation for long operations as there is no simple sign extend, or
+32bit add and subtract available. The same problem applies to 32bit shifting.
+
+The subtract operation is implemented as a ones complement add and adjust.
+This causes the carry flag to be set if you subtract 0 from something, and
+makes 32bit maths even more exciting.
+
+Status
+
+Integer operations are fairly complete and generate reasonable code for the
+most part.
+
+Byte operations are slow but fairly complete. Performance improvements to spot
+byte operations that can be completed without integer type conversion would
+probably require core compiler changes. Apart from string operations (which
+benefit a lot from clever asm on the tms99xx anyway) it hopefully won't hurt
+too much. Don't use uint8_t indexes thinking they'll be faster.
+
+Long operations are mostly complete.
+
+Floating point looks like it might generate valid code but needs the FP
+emulator writing and more to actually test it. Need to check the FP bit format
+versus IEEE as well as they do not appear identical ?
+
+Floating Point
+
+The TMS9995 itself lacks floating point but it is part of the overall
+instruction set. The compiler generates TI 990/12 floating point instructions
+which will cause MID emulation traps on the TMS9995 but will run full speed
+on a TI 990/12.
+
+Emulation is only required for the following opcodes
+
+AR, CRE, CRI, CER, CIR, DR, LR, MR, NEGR, SR, STR
+
+64bit operations are not supported for anything at this point (so double is
+float).
+
+Implementation Details
+
+R6 is used throughout as a software stack pointer. This is a downward growing
+stack. There would be a small size advantage to an upward growing stack but
+it doesn't seem worth the pain.
+
+On function entry R6 holds the stack pointer, where *R6 is the first value.
+R11 has been loaded with the return address by BL. R5 is the callers frame
+pointer.
+
+The entry code saves R11 and R5 on the stack and then allocates a stack frame
+if required. R5 is set to point at the first object in the frame rather than
+as would be expected at the word above. This allows the compiler to generate
+faster and shorter references to the first word of the locals. If register
+variables are present they are stacked below the frame.
+
+On return the register variables are pulled from the stack, the stack pointer
+is reset from the frame pointer and the old R5, R11 recovered. RT is used to
+return.
+
+Arguments are currently passed on the stack. Returns are via R1 for 16bit or
+R0/R1 for 32bit with R0 holding the higher bits. This is done because
+
+- R0/R1 are the default 32bit pair and used as a 32bit accumulator by the
+hardware MPYS instruction, the floating point conversions and the helpers for
+32bit maths.
+
+- R1 is used for 16bit pair returns because it is the low half of the R0/R1
+pair when doing 32bit operations, and also because we want pointer returns not
+to be in r0.
+

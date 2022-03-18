@@ -1,0 +1,116 @@
+
+s8_32:		turn 8bit signed R1 into R0/R1
+
+		SWPB
+		ASR	R1,8
+s16_32:
+		CLR	R0
+		CI	R1, 0
+		JLT	s16_32_1
+		DEC	R0
+s16_32_1:	RT
+
+
+neg32:
+		INV	R0
+		INV	R1
+		; fall through
+inc32:
+		INC	R1
+		JNC	inc2_1
+		INC	R0
+inc2_1:		RT
+
+add32:		A	R3,R1
+		JNC	add32_1
+		INC	R0
+add32_1		A	R2,R0
+		RT
+
+add32:		A	@R11+,R1
+		JNC	add32_1
+		INC	R0
+add32_1		A	@R11+,R0
+		RT
+
+dec32:
+		DEC	R1
+		JNE	dec32_1
+		DEC	R0
+dec32_1:	RT
+
+sub32:
+		CI	0,R3
+		JEQ	sub32_1
+		SUB	R3,R1
+		JNC	sub32_1
+		DEC	R0
+sub32_1:	SUB	R2,R0
+		RT
+
+sub32i:
+		CI	0,*R11
+		JEQ	sub32_1
+		SUB	*R11,R1
+		JNC	sub32_1
+		DEC	R0
+sub32i_1:	INC	@R11
+		SUB	*R11+,R0
+		RT
+
+ls32_0:
+		SLA	R1,1
+		JOC	ls32_1
+		SLA	R0,1
+		JMP	ls32_2
+ls32_1:		SLA	R0,1
+		INC	R0
+ls32:		DEC	R2
+		JNC	ls32_0
+		RT
+rss32_0:
+		SRA	R1,1
+		JOC	rss32_1
+		SRL	R0,1
+		JMP	rss32_2
+rss32_1:	SRL	R0,1
+		ORI	R0, 0x8000
+rss32:		DEC	R2
+		JNC	rss32_0
+		RT
+		
+rsu32_0:
+		SRL	R1,1
+		JOC	rsu32_1
+		SRL	R0,1
+		JMP	rsu32_2
+rsu32_1:	SRL	R0,1
+		ORI	R0, 0x8000
+rsu32:		DEC	R2
+		JNC	rsu32_0
+		RT
+
+u32fp:
+		ci	r0, 0
+		jlt	u32fp_1
+		cer
+		rt
+u32fp_1:
+		cer
+		negr
+		rt
+	
+cret:
+		mov	r5,sp
+		mov	*sp+,r5
+		mov	*sp+,r11
+		rt
+
+mul32:
+mul32i:
+div32i:
+divs32i:
+div32:
+divs32:
+mod32:
+mods32:
