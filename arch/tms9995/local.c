@@ -240,7 +240,7 @@ andable(NODE *p)
 	   library code */
 	if (!kflag || p->n_sp->sclass == EXTERN)
 		return 1;
-	return(1);
+	return 0;
 }
 
 /*
@@ -339,6 +339,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 #ifndef LANG_CXX
 	SFP sfp = p->n_scon;
 #endif
+	struct symtab *q;
 	TWORD t;
 	int i;
 
@@ -368,6 +369,17 @@ ninval(CONSZ off, int fsz, NODE *p)
 		    sfp->fp[1] & 0xFFFF, sfp->fp[0] >> 16, sfp->fp[0] & 0xFFFF);
 		break;
 #endif
+	case INT:
+	case UNSIGNED:
+		printf("\t.word 0x%x", (int)glval(p));
+		if ((q = p->n_sp) != NULL) {
+			if ((q->sclass == STATIC && q->slevel > 0)) {
+				printf("+" LABFMT, q->soffset);
+			} else
+				printf("+%s", getexname(q));
+		}
+		printf("\n");
+		break;
 	default:
 		return 0;
 	}
