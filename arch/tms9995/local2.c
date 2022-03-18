@@ -484,6 +484,10 @@ adrput(FILE *io, NODE *p)
 		}
 		return;
 
+	case UMUL:
+		fprintf(io, "*%s", rnames[p->n_rval]);
+		return;
+
 	default:
 		comperr("illegal address, op %d, node %p", p->n_op, p);
 		return;
