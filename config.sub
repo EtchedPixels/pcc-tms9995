@@ -312,6 +312,7 @@ case $basic_machine in
 	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
 	| spu \
 	| tahoe | tic4x | tic54x | tic55x | tic6x | tic80 | tron \
+	| tms9995 \
 	| ubicom32 \
 	| v850 | v850e | v850e1 | v850e2 | v850es | v850e2v3 \
 	| visium \
@@ -440,6 +441,7 @@ case $basic_machine in
 	| tahoe-* \
 	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
 	| tile*-* \
+	| tms9995-* \
 	| tron-* \
 	| ubicom32-* \
 	| v850-* | v850e-* | v850e1-* | v850es-* | v850e2-* | v850e2v3-* \
@@ -1299,6 +1301,9 @@ case $basic_machine in
 	pdp11)
 		basic_machine=pdp11-dec
 		;;
+	tms9995)
+		basic_machine=tms9995-ti
+		;;
 	we32k)
 		basic_machine=we32k-att
 		;;
@@ -1531,6 +1536,8 @@ case $os in
 		;;
 	-nacl*)
 		;;
+	-fuzix)
+		;;
 	-none)
 		;;
 	*)
@@ -1721,6 +1728,9 @@ case $basic_machine in
 		;;
 	*-atari*)
 		os=-mint
+		;;
+	tms9995-*)
+		os=-fuzix
 		;;
 	*)
 		os=-none
