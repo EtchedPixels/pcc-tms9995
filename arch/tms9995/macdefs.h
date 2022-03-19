@@ -1,5 +1,6 @@
 /*	$Id: macdefs.h,v 1.18 2021/10/08 15:59:07 ragge Exp $	*/
 /*
+ * Copyright (c) 2022 Alan Cox <etchedpixels@gmail.com>
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
  *

@@ -1,5 +1,6 @@
 /*	$Id: code.c,v 1.17 2019/04/25 17:39:23 ragge Exp $	*/
 /*
+ * Copyright (c) 2022 Alan Cox <etchedpixels@gmail.com>
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
  *

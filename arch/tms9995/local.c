@@ -1,5 +1,6 @@
 /*	$Id: local.c,v 1.25 2019/04/23 16:14:39 ragge Exp $	*/
 /*
+ * Copyright (c) 2022 Alan Cox <etchedpixels@gmail.com>
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
  *
