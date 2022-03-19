@@ -1,13 +1,17 @@
 
-s8_32:		turn 8bit signed R1 into R0/R1
+|
+|	Provisional - still playing with reg order and assignments
+|
+
+s8_32:		turn 8bit signed R0 into R0/R1
 
 		SWPB
-		ASR	R1,8
+		ASR	R0,8
 s16_32:
-		CLR	R0
-		CI	R1, 0
+		CLR	R1
+		CI	R0, 0
 		JLT	s16_32_1
-		DEC	R0
+		DEC	R1
 s16_32_1:	RT
 
 
@@ -16,80 +20,83 @@ neg32:
 		INV	R1
 		; fall through
 inc32:
-		INC	R1
-		JNC	inc2_1
 		INC	R0
+		JNE	inc2_1
+		INC	R1
 inc2_1:		RT
 
-add32:		A	R3,R1
+add32:		A	R2,R0
 		JNC	add32_1
 		INC	R0
-add32_1		A	R2,R0
+add32_1		A	R3,R1
 		RT
 
-add32:		A	@R11+,R1
+add32:		A	@R11+,R0
 		JNC	add32_1
-		INC	R0
-add32_1		A	@R11+,R0
+		INC	R1
+add32_1		A	@R11+,R1
 		RT
 
 dec32:
-		DEC	R1
-		JNE	dec32_1
 		DEC	R0
+		JNE	dec32_1
+		DEC	R1
 dec32_1:	RT
 
 sub32:
-		CI	0,R3
+		CI	0,R2
 		JEQ	sub32_1
-		SUB	R3,R1
+		SUB	R2,R0
 		JNC	sub32_1
-		DEC	R0
-sub32_1:	SUB	R2,R0
+		DEC	R1
+sub32_1:	SUB	R3,R1
 		RT
 
 sub32i:
 		CI	0,*R11
 		JEQ	sub32_1
-		SUB	*R11,R1
+		SUB	*R11,R0
 		JNC	sub32_1
-		DEC	R0
+		DEC	R1
 sub32i_1:	INC	@R11
-		SUB	*R11+,R0
+		SUB	*R11+,R1
 		RT
 
 ls32_0:
-		SLA	R1,1
-		JOC	ls32_1
 		SLA	R0,1
+		JOC	ls32_1
+		SLA	R1,1
 		JMP	ls32_2
-ls32_1:		SLA	R0,1
-		INC	R0
+ls32_1:		SLA	R1,1
+		INC	R1
 ls32:		DEC	R2
 		JNC	ls32_0
 		RT
 rss32_0:
-		SRA	R1,1
+		SRA	R0,1
 		JOC	rss32_1
-		SRL	R0,1
+		SRL	R1,1
 		JMP	rss32_2
-rss32_1:	SRL	R0,1
-		ORI	R0, 0x8000
+rss32_1:	SRL	R1,1
+		ORI	R1, 0x8000
 rss32:		DEC	R2
 		JNC	rss32_0
 		RT
 		
 rsu32_0:
-		SRL	R1,1
-		JOC	rsu32_1
 		SRL	R0,1
+		JOC	rsu32_1
+		SRL	R1,1
 		JMP	rsu32_2
-rsu32_1:	SRL	R0,1
-		ORI	R0, 0x8000
+rsu32_1:	SRL	R1,1
+		ORI	R1, 0x8000
 rsu32:		DEC	R2
 		JNC	rsu32_0
 		RT
 
+;
+;	For cer and cre we need to flip the bytes
+;
 u32fp:
 		ci	r0, 0
 		jlt	u32fp_1

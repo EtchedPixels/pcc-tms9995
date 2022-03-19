@@ -190,10 +190,10 @@ setuni(NODE *p, int cookie)
    so we can generate nice tight helpers. Favour R01 for now */
 
 static struct rspecial longfunc[] = {
-	{NLEFT,  R23}, {NRIGHT, R01}, {NRES, R01}, { 0 }
+	{NLEFT,  R01}, {NRIGHT, R23}, {NRES, R01}, { 0 }
 };
 
-static struct rspecial longfuncincdec[] = {
+static struct rspecial longfunconearg[] = {
 	{NLEFT,  R01}, {NRES, R01}, { 0 }
 };
 
@@ -223,7 +223,7 @@ nspecial(struct optab *q)
 			return s;
 		} else if (q->visit == INBREG) {
 			if (q->rshape == SCON)
-				return longfunc1;
+				return longfunconearg;
 			return longfunc;
 		}
 		break;
@@ -237,7 +237,7 @@ nspecial(struct optab *q)
 		}
 		else if (q->visit == INBREG) {
 			if (q->rshape == SCON)
-				return longfunc1;
+				return longfunconearg;
 			return longfunc;
 		}
 		break;
@@ -251,14 +251,14 @@ nspecial(struct optab *q)
 		}
 		else if (q->visit == INBREG) { 
 			if (q->rshape == SCON)
-				return longfuncincdec;
+				return longfunconearg;
 			return longfunc;
 		}
 		break;
 	case PLUS:
 	case MINUS:
 		if (q->rshape == SONE || q->rshape == SCON)
-			return longfuncincdec;
+			return longfunconearg;
 		if (q->visit == (INBREG|FOREFF))
 			return longfunc;
 		break;
@@ -296,9 +296,17 @@ nspecial(struct optab *q)
 		/* u8/16 -> u32 */
 		if (q->lshape == SAREG) {
 			static struct rspecial s[] = {
-			    { NEVER, R0 }, { NLEFT, R1 }, { NRES, R01 }, { 0 } };
+			  { NEVER, R0 }, { NEVER, R1 },
+			  { NLEFT, R1 }, {NORIGHT, R01}, { NRES, R01 }, { 0 } };
 			return s;
 		}
+		if (q->lshape & SAREG) {
+			static struct rspecial s[] = {
+			{ NEVER, R0 }, { NEVER, R1, }, 
+			{ NRIGHT, R01 }, { NRES, R01 }, { 0 } };
+			return s;
+		}
+	
 		break;
 	case STASG: {
 			/* R0 = tmp counter. R1 source, R2 dest */

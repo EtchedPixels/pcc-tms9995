@@ -160,7 +160,9 @@ typedef long long OFFSZ;
 #define	R23	012
 #define	R34	013
 
-#define	FR0	020
+#define	FR0	020	/* Results accumulate here */
+#define	FR1	021
+#define	FR2	022
 
 #define	LL0	030
 #define	LL1	031
@@ -172,34 +174,34 @@ typedef long long OFFSZ;
 #define	RSTATUS	\
 	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|PERMREG, SAREG|PERMREG, 0, 0, \
 	SBREG, SBREG, SBREG, SBREG, 0, 0, 0, 0,		\
-	SCREG|TEMPREG, 0, 0, 0, 0, 0, 0, 0,		\
+	SCREG, SCREG, SCREG, 0, 0, 0, 0, 0,		\
 	SDREG, SDREG, SDREG, SDREG,
 
 #define	ROVERLAP \
 	/* 8 basic registers */\
 	{ R01, FR0, -1 },	\
 	{ R01, R12, FR0, -1 },	\
-	{ R12, R23, -1 },	\
-	{ R23, R34, -1 },	\
-	{ R34, -1 },		\
+	{ R12, R23, FR1, -1 },	\
+	{ R23, R34, FR1, -1 },	\
+	{ R34, FR2,-1 },	\
 	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 \
 	/* 4 long registers */\
 	{ R0, R1, R12, FR0, -1 },		\
-	{ R1, R2, R01, R23, -1 },		\
-	{ R2, R3, R12, R34, -1 },		\
-	{ R3, R4, R23, -1 },		\
+	{ R1, R2, R01, R23, FR0, FR1, -1 },		\
+	{ R2, R3, R12, R34, FR1, FR2, -1 },		\
+	{ R3, R4, R23, FR2, -1 },		\
 	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 \
 	/* The fp register is R0/1 */\
-	{ R0, R1, R01, R12 },\
-	{ -1 },\
-	{ -1 },\
+	{ R0, R1, R01, R12, -1 },\
+	{ R2, R3, R12, R23, -1 },\
+	{ R4, R5, R34, -1 },\
 	{ -1 },\
 	{ -1 },\
 	{ -1 },\

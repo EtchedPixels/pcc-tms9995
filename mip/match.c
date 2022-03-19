@@ -279,7 +279,7 @@ expand(NODE *p, int cookie, char *cp)
 			continue;  /* this is the usual case... */
 
 		case 'Z':  /* special machine dependent operations */
-			zzzcode( p, *++cp );
+			cp = zzzcode( p, ++cp );
 			continue;
 
 		case 'F':  /* this line deleted if FOREFF is active */

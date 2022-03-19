@@ -28,11 +28,11 @@
 # include <ctype.h>
 # include <string.h>
 
+static void lpput(NODE *p);
+
 static int spcoff;
 static int argsiz(NODE *p);
 static void negcon(FILE *fp, int con);
-
-static char rnamebuf[32];
 
 static int classbmap[] = {
 	1, 2, 3, 4, -1, -1, -1, -1
@@ -49,23 +49,46 @@ static const char *rpname[]  = {
 	"XXX"
 };
 
+static const char *rname[] = {
+	"r0",
+	"r1",
+	"r2",
+	"r3",
+	"r4",
+	"r5",
+	"r6",
+	"r7",
+	"r8",
+	"r9",
+	"r10",
+	"r11",
+	"r12",
+	"r13",
+	"r14",
+	"r15"
+};
+
+/* TODO: fr[n] */
 /* Print the name of a register */
 static const char *regname(int n)
 {
 	switch(GCLASS(n)) {
 	case CLASSA:
-		sprintf(rnamebuf, "r%d", n);
-		return rnamebuf;
+		return rname[n];
 	case CLASSB:
 		/* This is only valid as an internal working name for debug */
 		return rpname[n & 0x07];
 	case CLASSC:
 		return "fr0";
 	default:
-		sprintf(rnamebuf, "BAD REG %d", n);
-		return rnamebuf;
+		return "XXX";
 	}
 }
+
+/* We keep registers in the low/high order. This would be nice to fix but
+   the compiler core appears to have some internal assumptions about this
+   and 'sameness' of differing register classes. It's only annoying for a
+   few hardware ops */
 
 /* Print the low part name of a register */
 static const char *regname_l(int n)
@@ -74,15 +97,12 @@ static const char *regname_l(int n)
 	case CLASSB:
 		n = classbmap[n & 0x07] - 1;
 	case CLASSA:
-		sprintf(rnamebuf, "r%d", n);
-		return rnamebuf;
-		break;
+		return rname[n];
 	case CLASSC:
 		/* fr0 is an alias of r0/r1 */
 		return "r1";
 	default:
-		sprintf(rnamebuf, "BAD REG %d", n);
-		return rnamebuf;
+		return "XXX";
 	}
 }
 
@@ -93,13 +113,11 @@ static const char *regname_h(int n)
 	/* Not valid for class A - there is no high half */
 	case CLASSB:
 		n = classbmap[n & 0x07];
-		sprintf(rnamebuf, "r%d", n);
-		return rnamebuf;
+		return rname[n];
 	case CLASSC:
 		return "r0";
 	default:
-		sprintf(rnamebuf, "BAD REG %d", n);
-		return rnamebuf;
+		return "xxx";
 	}
 }
 
@@ -302,17 +320,42 @@ twolcomp(NODE *p)
 }
 
 void
-zzzcode(NODE *p, int c)
+rmove(int s, int d, TWORD t)
+{
+	if (t < LONG || t > BTMASK) {
+		printf("mov	%s,%s\n",
+			regname(s), regname(d));
+	} else if (t == LONG || t == ULONG || t == FLOAT || t == DOUBLE) {
+		/* avoid trashing double regs */
+		if (d > s)
+			printf("mov	%s,%s\nmov	%s,%s\n",
+			regname_l(s), regname_l(d),
+			regname_h(s), regname_h(d));
+		else
+			printf("mov	%s,%s\nmov	%s,%s\n",
+			regname_h(s), regname_h(d),
+			regname_l(s), regname_l(d));
+	} else
+		comperr("bad rmove: %d %d %x", s, d, t);
+
+}
+
+static int zzlab;
+
+char *zzzcode(NODE *p, char *s)
 {
 	struct attr *ap;
 	NODE *l;
-	char *s;
 	int o;
 	int len;
+	char c = *s++;
 
 	switch (c) {
-	case 'A': /* Adust sp for argument push */
-		spcoff += argsiz(p);
+	case 'A':
+		lpput(getlr(p, *s++));
+		break;
+	case 'B': /* Assign a label (no 1f etc in assembler) */
+		zzlab = getlab2();
 		break;
 	case 'C': /* subtract stack after call */
 		spcoff -= p->n_qual;
@@ -321,8 +364,19 @@ zzzcode(NODE *p, int c)
 		else if (p->n_qual > 2)
 			printf("ai	%d,r6\n", (int)p->n_qual);
 		break;
+	case 'D':
+		/* Define the label from ZB */
+		deflab(zzlab);
+		break;
+	case 'E':
+		/* Print the ZB label */
+		printf(LABFMT, zzlab);
+		break;
 	case 'F': /* long comparision */
 		twolcomp(p);
+		break;
+	case 'G':
+		rmove(regno(p->n_right), regno(p->n_left), p->n_type);
 		break;
 #if 0
 	case 'G': /* printout a subnode for post-inc */
@@ -376,9 +430,13 @@ zzzcode(NODE *p, int c)
 		printf("jne	" LABFMT "\n", o);
 		spcoff += argsiz(p);
 		break;
+	case 'S': /* Adust sp for argument push */
+		spcoff += argsiz(p);
+		break;
 	default:
 		comperr("zzzcode %c", c);
 	}
+	return s - 1;
 }
 
 /*ARGSUSED*/
@@ -475,9 +533,7 @@ upput(NODE *p, int size)
 	switch (p->n_op) {
 	case NAME:
 	case OREG:
-		setlval(p, getlval(p) + size);
 		adrput(stdout, p);
-		setlval(p, getlval(p) - size);
 		break;
 	case REG:
 		printf("%s", regname_h(p->n_rval));
@@ -488,6 +544,31 @@ upput(NODE *p, int size)
 		break;
 	default:
 		comperr("upput bad op %d size %d", p->n_op, size);
+	}
+}
+
+/*
+ * Write out the lower address. As we are big endian this matters for
+ * non word sized objects
+ */
+void lpput(NODE *p)
+{
+	switch (p->n_op) {
+	case NAME:
+	case OREG:
+		setlval(p, getlval(p) + 2);
+		adrput(stdout, p);
+		setlval(p, getlval(p) - 2);
+		break;
+	case REG:
+		printf("%s", regname_l(p->n_rval));
+		break;
+	case ICON:
+		/* On TMS9995 lower value is low 16 bits */
+		negcon(stdout, getlval(p) & 0xFFFF);
+		break;
+	default:
+		comperr("lpput bad op %d", p->n_op);
 	}
 }
 
@@ -646,7 +727,6 @@ static void
 fixops(NODE *p, void *arg)
 {
 	static int fltwritten;
-	NODE *r;
 
 	if (!fltwritten && (p->n_type == FLOAT || p->n_type == DOUBLE)) {
 		printf(".globl	fltused\n");
@@ -710,28 +790,6 @@ myoptim(struct interpass *ip)
 {
 }
 
-void
-rmove(int s, int d, TWORD t)
-{
-	if (t < LONG || t > BTMASK) {
-		printf("mov	%s,%s\n", rnames[s],rnames[d]);
-	} else if (t == LONG || t == ULONG) {
-		/* avoid trashing double regs */
-		if (d > s)
-			printf("mov	r%c,r%c\nmov	r%c,r%c\n",
-			    rnames[s][2],rnames[d][2],
-			    rnames[s][1],rnames[d][1]);
-		else
-			printf("mov	r%c,r%c\nmov	r%c,r%c\n",
-			    rnames[s][1],rnames[d][1],
-			    rnames[s][2],rnames[d][2]);
-	} else if (t == FLOAT || t == DOUBLE) {
-		printf("movf	%s,%s\n", rnames[s],rnames[d]);
-	} else
-		comperr("bad float rmove: %d %d %x", s, d, t);
-
-}
-
 /*
  * For class c, find worst-case displacement of the number of
  * registers in the array r[] indexed by class.
@@ -741,14 +799,16 @@ COLORMAP(int c, int *r)
 {
 	switch (c) {
 	case CLASSA:
-		return (r[CLASSB] * 2 + r[CLASSA]) < 5;
+		return (r[CLASSC] * 2 + r[CLASSB] * 2 + r[CLASSA]) < 6;
 	case CLASSB:
-		if (r[CLASSB] > 1) return 0;
+		if (r[CLASSB] + r[CLASSC] > 1) return 0;
 		if (r[CLASSB] == 1 && r[CLASSA] > 0) return 0;
+		if (r[CLASSC] == 1 && r[CLASSA] > 0) return 0;
 		if (r[CLASSA] > 2) return 0;
 		return 1;
 	case CLASSC:
-		return r[CLASSC] < 4;
+		/* FIXME */
+		return r[CLASSC] < 3;
 	}
 	return 0;
 }
@@ -756,7 +816,7 @@ COLORMAP(int c, int *r)
 char *rnames[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 	"r01", "r12", "r23", "r34", "XXX", "XXX", "XXX", "XXX",
-	"fr0", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
+	"fr0", "fr1", "fr2", "XXX", "XXX", "XXX", "XXX", "XXX",
 };
 
 /*
