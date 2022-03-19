@@ -345,13 +345,14 @@ instring(struct symtab *sp)
 	t = BTYPE(sp->stype);
 	s = sp->sname;
 	if (t == UNSIGNED) {
+		printf(".word ");
 		/* convert to UTF-16 */
 		while (*s) {
 			cp2u16(u82cp(&s), sh);
 			if (sh[0]) printf("0x%x\n", sh[0]);
 			if (sh[1]) printf("0x%x\n", sh[1]);
 		}
-		printf("0\n");
+		printf(".word 0\n");
 	} else if (t == CHAR) {
 		for (cnt = 0; *s != 0; ) {
 			if (cnt++ == 0)
@@ -416,7 +417,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 #endif
 	case CHAR:
 	case UCHAR:
-		printf(".byte 0x%02x",  (int)(glval(p) & 0xFF));
+		printf(".byte 0x%02x\n",  (int)(glval(p) & 0xFF));
 		break;
 	case INT:
 	case UNSIGNED:
