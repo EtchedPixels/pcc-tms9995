@@ -188,26 +188,26 @@ setuni(NODE *p, int cookie)
  */
 
 /* General rules to pin shared 32bit helpers to a specific register group
-   so we can generate nice tight helpers. Favour R01 for now */
+   so we can generate nice tight helpers. Favour RP01 for now */
 
 static struct rspecial longfunc[] = {
-	{NLEFT,  R01}, {NRIGHT, R23}, {NRES, R01}, { 0 }
+	{NLEFT,  RP01}, {NRIGHT, RP23}, {NRES, RP01}, { 0 }
 };
 
 static struct rspecial longfunconearg[] = {
-	{NLEFT,  R01}, {NRES, R01}, { 0 }
+	{NLEFT,  RP01}, {NRES, RP01}, { 0 }
 };
 
 static struct rspecial longfunc1[] = {
-	{NLEFT,  R01}, {NRIGHT, R2}, {NRES, R01}, {NEVER, R01}, {NEVER, R2}, { 0 } 
+	{NLEFT,  RP01}, {NRIGHT, R2}, {NRES, RP01}, {NEVER, RP01}, {NEVER, R2}, { 0 }
 };
 
 static struct rspecial longintfunc[] = {
-	{NLEFT,  R01}, {NRIGHT, R2}, {NRES, R01}, { 0 }
+	{NLEFT,  RP01}, {NRIGHT, R2}, {NRES, RP01}, { 0 }
 };
 
 static struct rspecial convlongfunc[] = {
-	{NLEFT,  R0}, {NRES, R01}, { 0 }
+	{NLEFT,  R0}, {NRES, RP01}, { 0 }
 };
 
 
@@ -311,7 +311,7 @@ nspecial(struct optab *q)
 		/* float to 32 */
 		if (q->lshape == SCREG && q->visit == INBREG) {
 			static struct rspecial s[] = {
-			    { NLEFT, R01 }, {NRES, FR0} };
+			    { NLEFT, RP01 }, {NRES, FR0} };
 			return s;
 		}
 		/* float to 16 */
@@ -324,13 +324,13 @@ nspecial(struct optab *q)
 		if (q->lshape == SAREG) {
 			static struct rspecial s[] = {
 			  { NEVER, R0 }, { NEVER, R1 },
-			  { NLEFT, R1 }, {NORIGHT, R01}, { NRES, R01 }, { 0 } };
+			  { NLEFT, R1 }, {NORIGHT, RP01}, { NRES, RP01 }, { 0 } };
 			return s;
 		}
 		if (q->lshape & SAREG) {
 			static struct rspecial s[] = {
 			{ NEVER, R0 }, { NEVER, R1, }, 
-			{ NRIGHT, R01 }, { NRES, R01 }, { 0 } };
+			{ NRIGHT, RP01 }, { NRES, RP01 }, { 0 } };
 			return s;
 		}
 	

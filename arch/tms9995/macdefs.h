@@ -139,70 +139,102 @@ typedef long long OFFSZ;
  * Class membership and overlaps are defined in the macros RSTATUS
  * and ROVERLAP below.
  *
- * The classes used on pdp11 are:
+ * The classes used the TMS9995 are:
  *	A - 16-bit
  *	B - 32-bit (concatenated 16-bit)
  *	C - floating point
- *	D - 64-bit (on stack, emulated)
+ *	D - 64-bit (on stack, emulated, not yet)
  *
- * To get started we are not using all the registers
  */
-#define	R0	000	/* Scratch and secondary return register */
-#define	R1	001	/* Scratch and return register */
-#define	R2	002	/* Scratch register */
-#define	R3	003	/* Scratch register */
-#define	R4	004	/* Scratch register or register variable */
-#define	R5	005	/* Scratch register or register variable */
-#define	SP	006	/* Stack pointer */
-#define R7	007	/* Frame pointer */
+#define	R0	0x00	/* Scratch and secondary return register */
+#define	R1	0x01	/* Scratch and return register */
+#define	R2	0x02	/* Scratch register */
+#define	R3	0x03	/* Scratch register */
+#define	R4	0x02	/* Scratch register */
+#define	R5	0x03	/* Scratch register */
+#define	SP	0x06	/* Stack pointer */
+#define R7	0x07	/* Frame pointer */
+#define	R8	0x08	/* Scratch register or register variable */
+#define	R9	0x09	/* Scratch register or register variable */
+#define	R10	0x0A	/* Scratch register or register variable */
+#define	R11	0x0B	/* Link register */
+#define R12	0x0C	/* CRU offset */
+#define R13	0x0D	/* Unused */
+#define R14	0x0E	/* Relocatable code pointer */
+#define R15	0x0F	/* PIC data pointer */
 
-#define	R01	010
-#define	R12	011
-#define	R23	012
-#define	R34	013
+#define	RP01	0x10	/* Pairs. We don't seem to gain much from */
+#define	RP12	0x11	/* Register longs or many pairs due to all the helpers */
+#define	RP23	0x12
+#define	RP34	0x13
 
-#define	FR0	020	/* Results accumulate here */
-#define	FR1	021
-#define	FR2	022
+#define	FR0	0x20	/* Results accumulate here */
 
-#define	LL0	030
-#define	LL1	031
-#define	LL2	032
-#define	LL3	033
+#define	LL0	0x30
+#define	LL1	0x31
+#define	LL2	0x32
+#define	LL3	0x33
 
-#define	MAXREGS	034	/* 28 registers */
+#define	MAXREGS	0x34	/* 52 registers */
 
 #define	RSTATUS	\
-	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|PERMREG, SAREG|PERMREG, 0, 0, \
-	SBREG, SBREG, SBREG, SBREG, 0, 0, 0, 0,		\
+	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, 0, 0, \
+		SAREG|PERMREG, SAREG|PERMREG, SAREG|PERMREG, 0, 0, 0, 0, 0, \
+	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, 0, 0, 0, 0,\
+		0, 0, 0, 0, 0, 0, 0, 0, \
 	SCREG|TEMPREG, 0, 0, 0, 0, 0, 0, 0,		\
+		0, 0, 0, 0, 0, 0, 0, 0, \
 	SDREG, SDREG, SDREG, SDREG,
 
 #define	ROVERLAP \
 	/* 8 basic registers */\
-	{ R01, FR0, -1 },	\
-	{ R01, R12, FR0, -1 },	\
-	{ R12, R23, FR1, -1 },	\
-	{ R23, R34, FR1, -1 },	\
-	{ R34, FR2,-1 },	\
+	{ RP01, FR0, -1 },	\
+	{ RP01, RP12, FR0, -1 },	\
+	{ RP12, RP23, -1 },	\
+	{ RP23, RP34, -1 },	\
+	{ RP34, -1 },		\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 \
 	/* 4 long registers */\
-	{ R0, R1, R12, FR0, -1 },		\
-	{ R1, R2, R01, R23, FR0, FR1, -1 },		\
-	{ R2, R3, R12, R34, FR1, FR2, -1 },		\
-	{ R3, R4, R23, FR2, -1 },		\
+	{ R0, R1, RP12, FR0, -1 },		\
+	{ R1, R2, RP01, RP23, FR0, -1 },		\
+	{ R2, R3, RP12, RP34, -1 },		\
+	{ R3, R4, RP23, -1 },		\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
+	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 	{ -1 },			\
 \
 	/* The fp register is R0/1 */\
-	{ R0, R1, R01, R12, -1 },\
-	{ R2, R3, R12, R23, -1 },\
-	{ R4, R5, R34, -1 },\
+	{ R0, R1, RP01, RP12, -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
+	{ -1 },\
 	{ -1 },\
 	{ -1 },\
 	{ -1 },\
@@ -224,13 +256,13 @@ typedef long long OFFSZ;
 #define	NUMCLASS 	3	/* highest number of reg classes used */
 
 int COLORMAP(int c, int *r);
-#define	GCLASS(x) (x < 8 ? CLASSA : x < 16 ? CLASSB : x < 24 ? CLASSC : CLASSD)
+#define	GCLASS(x) (x < 16 ? CLASSA : x < 32 ? CLASSB : x < 48 ? CLASSC : CLASSD)
 #define DECRA(x,y)	(((x) >> (y*5)) & 31)	/* decode encoded regs */
 #define	ENCRD(x)	(x)		/* Encode dest reg in n_reg */
 #define ENCRA1(x)	((x) << 5)	/* A1 */
 #define ENCRA2(x)	((x) << 10)	/* A2 */
 #define ENCRA(x,y)	((x) << (5+y*5))	/* encode regs in int */
-#define	RETREG(x)	((x) == LONG || (x) == ULONG ? R01 : \
+#define	RETREG(x)	((x) == LONG || (x) == ULONG ? RP01 : \
 	(x) == FLOAT || (x) == DOUBLE ? FR0 : \
 	(x) == LONGLONG || (x) == ULONGLONG ? LL0: R1)
 

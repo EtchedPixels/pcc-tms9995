@@ -81,11 +81,11 @@ stack. There would be a small size advantage to an upward growing stack but
 it doesn't seem worth the pain.
 
 On function entry R6 holds the stack pointer, where *R6 is the first value.
-R11 has been loaded with the return address by BL. R5 is the callers frame
+R11 has been loaded with the return address by BL. R7 is the callers frame
 pointer.
 
-The entry code saves R11 and R5 on the stack and then allocates a stack frame
-if required. R5 is set to point at the first object in the frame rather than
+The entry code saves R11 and R7 on the stack and then allocates a stack frame
+if required. R7 is set to point at the first object in the frame rather than
 as would be expected at the word above. This allows the compiler to generate
 faster and shorter references to the first word of the locals. If register
 variables are present they are stacked below the frame.
@@ -105,3 +105,10 @@ hardware MPYS instruction, the floating point conversions and the helpers for
 pair when doing 32bit operations, and also because we want pointer returns not
 to be in r0.
 
+PIC
+
+When asked to generate PIC code static data is indexed by R15 and R15 is
+saved/restored, with the assumption being that library entry stubs will set
+R15.
+
+For fully relocatable code R14 is used to index all code references.
