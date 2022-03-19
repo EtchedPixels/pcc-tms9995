@@ -32,6 +32,77 @@ static int spcoff;
 static int argsiz(NODE *p);
 static void negcon(FILE *fp, int con);
 
+static char rnamebuf[32];
+
+static int classbmap[] = {
+	1, 2, 3, 4, -1, -1, -1, -1
+};
+
+static const char *rpname[]  = {
+	"rp01",
+	"rp12",
+	"rp23",
+	"rp34",
+	"XXX",
+	"XXX",
+	"XXX",
+	"XXX"
+};
+
+/* Print the name of a register */
+static const char *regname(int n)
+{
+	switch(GCLASS(n)) {
+	case CLASSA:
+		sprintf(rnamebuf, "r%d", n);
+		return rnamebuf;
+	case CLASSB:
+		/* This is only valid as an internal working name for debug */
+		return rpname[n & 0x07];
+	case CLASSC:
+		return "fr0";
+	default:
+		sprintf(rnamebuf, "BAD REG %d", n);
+		return rnamebuf;
+	}
+}
+
+/* Print the low part name of a register */
+static const char *regname_l(int n)
+{
+	switch(GCLASS(n)) {
+	case CLASSB:
+		n = classbmap[n & 0x07] - 1;
+	case CLASSA:
+		sprintf(rnamebuf, "r%d", n);
+		return rnamebuf;
+		break;
+	case CLASSC:
+		/* fr0 is an alias of r0/r1 */
+		return "r1";
+	default:
+		sprintf(rnamebuf, "BAD REG %d", n);
+		return rnamebuf;
+	}
+}
+
+/* Print the high part name of a register */
+static const char *regname_h(int n)
+{
+	switch(GCLASS(n)) {
+	/* Not valid for class A - there is no high half */
+	case CLASSB:
+		n = classbmap[n & 0x07];
+		sprintf(rnamebuf, "r%d", n);
+		return rnamebuf;
+	case CLASSC:
+		return "r0";
+	default:
+		sprintf(rnamebuf, "BAD REG %d", n);
+		return rnamebuf;
+	}
+}
+
 void
 deflab(int label)
 {
@@ -85,7 +156,7 @@ prologue(struct interpass_prolog *ipp)
 	for (i = 0; i < MAXREGS; i++)
 		if (TESTBIT(p2env.p_regs, i))
 			printf("dect	r6\nmov	%s,*r6\n",
-				rnames[i]);
+				regname(i));
 	/* Might be better to have an attribute for pic library entry funcs ? */
 	if (kflag)
 		printf("dect	r6\nmov	r15,*r6\n");
@@ -104,7 +175,7 @@ eoftn(struct interpass_prolog *ipp)
 	/* our registers should be top of stack */
 	for (i = 0; i < MAXREGS; i++) {
 		if (TESTBIT(p2env.p_regs, i))
-			printf("mov	*r6+, %s\n", rnames[i]);
+			printf("mov	*r6+, %s\n", regname(i));
 	}
 	if (kflag)
 		printf("mov	*r6+, r15\n");
@@ -277,7 +348,7 @@ zzzcode(NODE *p, int c)
 				l->n_rval = r;
 			} else {
 				if (r != 1)
-					printf("mov	%s,r1\n", rnames[r]);
+					printf("mov	%s,r1\n", regname(r));
 				if (getlval(l))
 					printf("ai	r1, %d\n", (int)getlval(l));
 			}
@@ -409,7 +480,7 @@ upput(NODE *p, int size)
 		setlval(p, getlval(p) - size);
 		break;
 	case REG:
-		printf("r%c", rnames[p->n_rval][1]);
+		printf("%s", regname_h(p->n_rval));
 		break;
 	case ICON:
 		/* On TMS9995 upper value is high 16 bits */
@@ -467,9 +538,9 @@ adrput(FILE *io, NODE *p)
 		} else
 #endif		
 		if (at)
-			fprintf(io, "(%s)", rnames[p->n_rval]);
+			fprintf(io, "(%s)", regname(p->n_rval));
 		else
-			fprintf(io, "*%s", rnames[p->n_rval]);
+			fprintf(io, "*%s", regname(p->n_rval));
 		return;
 	case ICON:
 		/* We will need to do some special handling for literals
@@ -481,10 +552,10 @@ adrput(FILE *io, NODE *p)
 		switch (p->n_type) {
 		case LONG:
 		case ULONG:
-			fprintf(io, "r%c", rnames[p->n_rval][2]);
+			fprintf(io, "%s", regname_l(p->n_rval));
 			break;
 		default:
-			fprintf(io, "%s", rnames[p->n_rval]);
+			fprintf(io, "%s", regname(p->n_rval));
 		}
 		return;
 
