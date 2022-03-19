@@ -35,6 +35,46 @@
 #define nfree p1nfree
 #endif
 
+#define IALLOC(sz)      (isinlining ? permalloc(sz) : tmpalloc(sz))
+/*
+ * Make a symtab entry for PIC use.
+ */
+static struct symtab *
+picsymtab(char *p, char *s, char *s2)
+{
+	struct symtab *sp = IALLOC(sizeof(struct symtab));
+	size_t len = strlen(p) + strlen(s) + strlen(s2) + 1;
+
+	sp->sname = IALLOC(len);
+	strlcpy(sp->sname, p, len);
+	strlcat(sp->sname, s, len);
+	strlcat(sp->sname, s2, len);
+	sp->sclass = EXTERN;
+	sp->sflags = sp->slevel = 0;
+
+	return sp;
+}
+
+static NODE *
+picstatic(NODE *p)
+{
+	NODE *q;
+	struct symtab *sp;
+
+	char *n;
+
+	n = p->n_sp->sname;
+	sp = picsymtab("", n, "(r15)");
+
+	sp->sclass = STATIC;
+	sp->stype = p->n_sp->stype;
+	q = xbcon(0, sp, PTR+VOID);
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_ap);
+	q->n_sp = p->n_sp;
+	p1nfree(p);
+	return q;
+}
+
 /*	this file contains code which is dependent on the target machine */
 
 /* clocal() is called to do local transformations on
@@ -82,9 +122,14 @@ clocal(NODE *p)
 			break;
 
 		case STATIC:
-			if (q->slevel == 0)
+			if (kflag == 0) {
+				if (q->slevel == 0)
+					break;
+				slval(p, 0);
 				break;
-			slval(p, 0);
+			}
+			if (blevel > 0)
+				p = picstatic(p);
 			break;
 
 		case REGISTER:
@@ -204,7 +249,7 @@ clocal(NODE *p)
 	return(p);
 }
 
-#define IALLOC(sz)      (isinlining ? permalloc(sz) : tmpalloc(sz))
+
 void
 myp2tree(NODE *p)
 {
@@ -369,9 +414,14 @@ ninval(CONSZ off, int fsz, NODE *p)
 		    sfp->fp[1] & 0xFFFF, sfp->fp[0] >> 16, sfp->fp[0] & 0xFFFF);
 		break;
 #endif
+	case CHAR:
+	case UCHAR:
+		printf(".byte 0x%02x",  (int)(glval(p) & 0xFF));
+		break;
 	case INT:
 	case UNSIGNED:
-		printf("\t.word 0x%x", (int)glval(p));
+	default:
+		printf(".word 0x%x", (int)glval(p));
 		if ((q = p->n_sp) != NULL) {
 			if ((q->sclass == STATIC && q->slevel > 0)) {
 				printf("+" LABFMT, q->soffset);
@@ -380,8 +430,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 		}
 		printf("\n");
 		break;
-	default:
-		return 0;
 	}
 	return 1;
 }

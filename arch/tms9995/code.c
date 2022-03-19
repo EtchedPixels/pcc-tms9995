@@ -45,6 +45,13 @@ setseg(int seg, char *name)
 	switch (seg) {
 	case PROG: name = ".code"; break;
 	case STRNG:
+	/* FIXME */
+	case PICDATA:
+		name = ".picdata"; break;
+	case PICRDATA:
+		name = ".picrdata"; break;
+	case PICLDATA:
+		name = ".picldata"; break;
 	case RDATA:
 	case DATA:
 	case LDATA: name = ".data"; break;
