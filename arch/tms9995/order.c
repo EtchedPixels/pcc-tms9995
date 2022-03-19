@@ -225,6 +225,11 @@ nspecial(struct optab *q)
 			if (q->rshape == SCON)
 				return longfunconearg;
 			return longfunc;
+		} else if (q->visit == INCREG) {
+		    /* Can we mul by itself ?? FIXME NORIGHT FR0 ? */
+			static struct rspecial  s[] = {
+			    { NLEFT, FR0 }, { NRES, FR0 }, { 0, } };
+			return s;
 		}
 		break;
 
@@ -234,11 +239,15 @@ nspecial(struct optab *q)
 			static struct rspecial s[] = {
 			    { NORIGHT, R0 }, { NORIGHT, R1 }, { NLEFT, R1 }, { NRES, R0 }, { 0 } };
 			return s;
-		}
-		else if (q->visit == INBREG) {
+		} else if (q->visit == INBREG) {
 			if (q->rshape == SCON)
 				return longfunconearg;
 			return longfunc;
+		} else if (q->visit == INCREG) {
+			static struct rspecial  s[] = {
+			    /* Can we div by itself ?? FIXME NORIGHT FR0 ? */
+			    { NLEFT, FR0 }, { NRES, FR0 }, { 0, } };
+			return s;
 		}
 		break;
 
@@ -281,16 +290,33 @@ nspecial(struct optab *q)
 		}
 		break;
 	case SCONV:
-		/* u8 -> float/double */
+		/* u8/16 -> float/double */
 		if (q->lshape == SAREG && q->visit == INCREG) {
 			static struct rspecial s[] = {
-			    { NLEFT, R0 }, { NRES, FR0 }, { 0 } };
+			    { NLEFT, R1 }, { NRES, FR0 }, { 0 } };
+			return s;
+		}
+		if (q->lshape == (SNAME|SOREG) && q->visit == INCREG) {
+			static struct rspecial s[] = {
+			    { NRES, FR0 }, { 0 } };
 			return s;
 		}
 		/* u32 -> float/double heler */
 		if (q->lshape == SBREG && q->visit == INCREG) {
 			static struct rspecial s[] = {
-			    { NLEFT, R01 }, { NRES, FR0 }, { 0 } };
+			    { NRES, FR0 }, { 0 } };
+			return s;
+		}
+		/* float to 32 */
+		if (q->lshape == SCREG && q->visit == INBREG) {
+			static struct rspecial s[] = {
+			    { NLEFT, R01 }, {NRES, FR0} };
+			return s;
+		}
+		/* float to 16 */
+		if (q->lshape == SCREG && q->visit == INBREG) {
+			static struct rspecial s[] = {
+			    { NLEFT, FR0 }, {NRES, R1} };
 			return s;
 		}
 		/* u8/16 -> u32 */

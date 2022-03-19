@@ -172,7 +172,6 @@ struct optab table[] = {
 		"swpb	AL\n", },
 
 /* convert (u)int to uchar  */
-/* FIXME: need to look at this for reg cases versus memory */
 { SCONV,	INAREG,
 	SAREG,	TWORD,
 	SANY,	TUCHAR,
@@ -186,8 +185,6 @@ struct optab table[] = {
 	SANY,	TWORD,
 		0,	RLEFT,
 		"", },
-
-/* FIXME: uchar->ptr flip... */
 
 /* convert pointer to char */
 /* flip bytes */
@@ -225,16 +222,19 @@ struct optab table[] = {
 		NBREG,	RESC1,
 		"clr	U1\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
 
-/* FIXME: check this one carefully */
+/* If the value is in a reg pair then we have to swap the registers */
 { SCONV,	INCREG,
-	SAREG|SNAME|SOREG,	TINT,
+	SAREG,	TINT,
+	SANY,	TFLOAT|TDOUBLE,
+		NSPECIAL,	RLEFT,
+		"bl	@cir_AL\n", },
+
+{ SCONV,	INCREG,
+	SNAME|SOREG,	TINT,
 	SANY,	TFLOAT|TDOUBLE,
 		NSPECIAL,	RLEFT,
 		"cir	AL\n", },
 
-
-/* unsigned -> (u)long. XXX - only in r0 and r1 */
-/* FIXME: we can do this in any reg pair with a Z helper ?? */
 { SCONV,	INBREG,
 	SAREG,	TUNSIGNED,
 	SANY,	TLONG|TULONG,
@@ -292,9 +292,9 @@ struct optab table[] = {
  */
 /* long -> float/double */
 { SCONV,	INCREG,
-	SNAME|SOREG|SCON,	TLONG,
+	SNAME|SOREG,	TLONG,
 	SANY,		TFLOAT|TDOUBLE,
-		NCREG|NCSL,	RESC1,
+		NSPECIAL,	RLEFT,
 		"cer AL\n", },
 
 /* ulong -> float/double */
@@ -305,20 +305,20 @@ struct optab table[] = {
 		"bl	@u32fp\n", },
 
 /* float/double -> (u)long */
-/* FIXME: again doesn't work with a BREG target because we need to flip */
+
+/* CRE needs the words flipping */
 { SCONV,	INBREG,
 	SCREG,	TFLOAT|TDOUBLE,
 	SANY,	TLONG|TULONG,
-		NBREG,	RESC1,
-		"cre A1\n" },
+		NSPECIAL,	RLEFT,
+		"bl	@cre_flip\n" },
 
 /* double -> int*/
-/* FIXME: ditto */
 { SCONV,	INAREG,
 	SCREG,	TFLOAT|TDOUBLE,
 	SANY,	TINT,
-		NAREG,	RESC1,
-		"cri	A1\n", },
+		NSPECIAL,	RLEFT,
+		"cri", },
 
 /* float/double -> float/double */
 { SCONV,	INCREG,
@@ -1005,7 +1005,7 @@ struct optab table[] = {
 { MUL,	INCREG,
 	SCREG,			TFLOAT|TDOUBLE,
 	SCREG|SOREG|SNAME,	TFLOAT|TDOUBLE,
-		0,	RLEFT,
+		NSPECIAL,	RLEFT,
 		"mr	AR\n", },
 
 /* signed divide r0/r1 by operand into r0/r1 (r1 = remainder) */
@@ -1052,7 +1052,7 @@ struct optab table[] = {
 { DIV,	INCREG,
 	SCREG,			TDOUBLE|TFLOAT,
 	SCREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
-		0,	RLEFT,
+		NSPECIAL,	RLEFT,
 		"dr	AR\n", },
 
 /* signed divide r0/r1 by operand into r0/r1 (r1 = remainder) */
