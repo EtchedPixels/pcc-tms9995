@@ -86,6 +86,9 @@ prologue(struct interpass_prolog *ipp)
 		if (TESTBIT(p2env.p_regs, i))
 			printf("dect	r6\nmov	%s,*r6\n",
 				rnames[i]);
+	/* Might be better to have an attribute for pic library entry funcs ? */
+	if (kflag)
+		printf("dect	r6\nmov	r15,*r6\n");
 	spcoff = 0;
 }
 
@@ -103,7 +106,8 @@ eoftn(struct interpass_prolog *ipp)
 		if (TESTBIT(p2env.p_regs, i))
 			printf("mov	*r6+, %s\n", rnames[i]);
 	}
-
+	if (kflag)
+		printf("mov	*r6+, r15\n");
 	printf("b	@cret\n");
 }
 
