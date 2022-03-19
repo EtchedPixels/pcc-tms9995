@@ -343,31 +343,31 @@ struct optab table[] = {
 		"bl	AL\nZC", },
 
 { UCALL,	INAREG,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SAREG,	TWORD|TPOINT|TCHAR|TUCHAR,
 		NAREG|NASL,	RESC1,
 		"bl	AL\n", },
 
 { CALL,		INAREG,
-	SAREG,	TANY,
+	SAREG|SOREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\nZC", },
+		"bl	*AL\nZC", },
 
 { UCALL,	INAREG,
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\n", },
+		"zbl	*AL\n", },
 
 { CALL,		INBREG,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
 		"bl	AL\nZC", },
 
 { UCALL,	INBREG,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
 		"bl	AL\n", },
@@ -376,22 +376,22 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"bl	AL\nZC", },
+		"bl	*AL\nZC", },
 
 { UCALL,	INBREG,
 	SAREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"bl	AL\n", },
+		"bl	*AL\n", },
 
 { CALL,		INCREG,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SCREG,	TFLOAT|TDOUBLE,
 		NCREG,	RESC1,
 		"bl	AL\nZC", },
 
 { UCALL,	INCREG,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SCREG,	TFLOAT|TDOUBLE,
 		NCREG,	RESC1,
 		"bl	AL\n", },
@@ -400,22 +400,22 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SCREG,	TFLOAT|TDOUBLE,
 		NCREG|NCSL,	RESC1,
-		"bl	AL\nZC", },
+		"bl	*AL\nZC", },
 
 { UCALL,	INCREG,
 	SAREG,	TANY,
 	SCREG,	TFLOAT|TDOUBLE,
 		NCREG|NCSL,	RESC1,
-		"bl	AL\n", },
+		"bl	*AL\n", },
 
 { CALL,		FOREFF,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SANY,	TANY,
 		0,	0,
 		"bl	AL\nZC", },
 
 { UCALL,	FOREFF,
-	SCON,	TANY,
+	SNAME|SCON|SOREG,	TANY,
 	SANY,	TANY,
 		0,	0,
 		"bl	AL\n", },
@@ -424,13 +424,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SANY,	TANY,
 		0,	0,
-		"bl	AL\nZC", },
+		"bl	*AL\nZC", },
 
 { UCALL,	FOREFF,
 	SAREG,	TANY,
 	SANY,	TANY,
 		0,	0,
-		"bl	AL\n", },
+		"bl	*AL\n", },
 
 { STCALL,	INAREG,
 	SCON|SOREG|SNAME,	TANY,
@@ -460,13 +460,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\nZC", },
+		"bl	*AL\nZC", },
 
 { USTCALL,	INAREG,
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\n", },
+		"bl	*AL\n", },
 
 /*
  * The next rules handle all binop-style operators.

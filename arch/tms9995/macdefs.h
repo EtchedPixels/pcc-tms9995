@@ -250,6 +250,8 @@ int COLORMAP(int c, int *r);
 #define	SARGINC		(MAXSPECIAL+6)	/* post-increment arg */
 #endif
 
+#define	ATTR_P1_TARGET	ATTR_TMS9995_BEENHERE
+
 /* floating point definitions */
 #define	FDFLOAT
 #define	DEFAULT_FPI_DEFS { &fpi_ffloat, &fpi_ffloat, &fpi_ffloat }

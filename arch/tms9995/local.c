@@ -55,6 +55,33 @@ picsymtab(char *p, char *s, char *s2)
 	return sp;
 }
 
+/*
+ * Create a reference for an extern variable.
+ */
+static NODE *
+picext(NODE *p)
+{
+	NODE *q;
+	struct symtab *sp;
+	char *c;
+
+	if (attr_find(p->n_sp->sap, ATTR_TMS9995_BEENHERE))
+		return p;
+
+	c = p->n_sp->sname;
+
+	sp = picsymtab("", c, "(r14)");
+	sp->sap = attr_add(sp->sap, attr_new(ATTR_TMS9995_BEENHERE, 1));
+
+	q = block(NAME, NIL, NIL, INCREF(p->n_type), p->n_df, p->n_ap);
+	q->n_sp = sp;
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_ap);
+	q->n_sp = sp;
+	nfree(p);
+	return q;
+
+}
+
 static NODE *
 picstatic(NODE *p)
 {
@@ -140,6 +167,10 @@ clocal(NODE *p)
 
 		case EXTERN:
 		case EXTDEF:
+			if (kflag < 2)
+				break;
+			if (blevel > 0 && !statinit)
+				p = picext(p);
 			break;
 		}
 		break;

@@ -197,7 +197,10 @@ eoftn(struct interpass_prolog *ipp)
 	}
 	if (kflag)
 		printf("mov	*r6+, r15\n");
-	printf("b	@cret\n");
+	if (kflag == 2)
+		printf("b	@cret(r14)\n");
+	else
+		printf("b	@cret\n");
 }
 
 /*
