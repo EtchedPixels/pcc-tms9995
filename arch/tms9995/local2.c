@@ -342,17 +342,18 @@ rmove(int s, int d, TWORD t)
 
 static int zzlab;
 
-char *zzzcode(NODE *p, char *s)
+void zzzcode(NODE *p, int c)
 {
 	struct attr *ap;
 	NODE *l;
 	int o;
 	int len;
-	char c = *s++;
 
 	switch (c) {
-	case 'A':
-		lpput(getlr(p, *s++));
+	case 'L':
+	case 'R':
+	case '1':
+		lpput(getlr(p, c));
 		break;
 	case 'B': /* Assign a label (no 1f etc in assembler) */
 		zzlab = getlab2();
@@ -383,7 +384,6 @@ char *zzzcode(NODE *p, char *s)
 		adrput(stdout, p->n_left->n_left);
 		break;
 
-	case 'H': /* arg with post-inc */
 		expand(p->n_left->n_left, FOREFF, "mov	AL,ZA(sp)\n");
 		expand(p->n_left->n_left, FOREFF, "inc	AL\n");
 		break;
@@ -436,7 +436,6 @@ char *zzzcode(NODE *p, char *s)
 	default:
 		comperr("zzzcode %c", c);
 	}
-	return s - 1;
 }
 
 /*ARGSUSED*/

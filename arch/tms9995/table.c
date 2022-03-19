@@ -530,7 +530,7 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		0,	RLEFT,
-		"ZBa	UR,UL\na	ZAR,ZAL\njnc	ZE\ninc	UL\nZD", },
+		"ZBa	UR,UL\na	ZR,ZL\njnc	ZE\ninc	UL\nZD", },
 
 { PLUS,		INBREG|FOREFF,
 	SBREG,			TLONG|TULONG,
@@ -833,7 +833,7 @@ struct optab table[] = {
 	SNAME|SOREG|SBREG,	TLONG|TULONG,
 	SZERO,			TANY,
 		0,	RDEST,
-		"clr	ZAL\nclr	UL\n", },
+		"clr	ZL\nclr	UL\n", },
 
 /* Must have multiple rules for long otherwise regs may be trashed */
 /* FIXME: use a Z helper for this to turn one or the other into CLR or
@@ -842,25 +842,25 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		0,	RDEST,
-		"li	ZAL,AR\nli	UL,UR\n", },
+		"li	ZL,AR\nli	UL,UR\n", },
 
 { ASSIGN,	FOREFF|INBREG,
 	SBREG,			TLONG|TULONG,
 	SNAME|SOREG,		TLONG|TULONG,
 		0,	RDEST,
-		"mov	ZAR,ZAL\nmov	UR,UL\n", },
+		"mov	ZR,ZL\nmov	UR,UL\n", },
 
 { ASSIGN,	FOREFF|INBREG,
 	SNAME|SOREG,	TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		0,	RDEST,
-		"mov	ZAR,ZAL\nmov	UR,UL\n", },
+		"mov	ZR,ZL\nmov	UR,UL\n", },
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLONG|TULONG,
 	SCON,		TLONG|TULONG,
 		0,	0,
-		"li	ZAR,ZAL\nli	UR,UL\n", },
+		"li	ZR,ZL\nli	UR,UL\n", },
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLONG|TULONG,
@@ -1102,7 +1102,7 @@ struct optab table[] = {
 	SANY,	TPOINT|TWORD,
 	SOREG,	TLONG|TULONG,
 		NBREG,	RESC1, /* |NBSL - may overwrite index reg */
-		"mov	ZAL,ZA1\nmov	UL,U1\n", },
+		"mov	ZL,Z1\nmov	UL,U1\n", },
 
 { UMUL,	INAREG,
 	SANY,	TPOINT|TWORD,
@@ -1185,7 +1185,7 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SCON|SBREG|SOREG|SNAME,	TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"and	ZAR,ZAL\nand	UR,UL\n", },
+		"and	ZR,ZL\nand	UR,UL\n", },
 
 /* set status bits */
 { AND,	FORCC,
@@ -1224,13 +1224,13 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"or	ZAR,ZAL\nor	UR,UL\n", },
+		"or	ZR,ZL\nor	UR,UL\n", },
 
 { OR,	INBREG|FORCC,
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"ori	ZAL,ZAR\nori	UL,UR\n", },
+		"ori	ZL,ZR\nori	UL,UR\n", },
 
 /* OR with int */
 { OR,	FOREFF|INAREG|FORCC,
@@ -1272,7 +1272,7 @@ struct optab table[] = {
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 	SBREG,	TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"xor	ZAR,ZAL\nxor	UR,UL\n", },
+		"xor	ZR,ZL\nxor	UR,UL\n", },
 
 /*
  * Jumps.
@@ -1299,13 +1299,13 @@ struct optab table[] = {
 	SANY,	TANY,
 	SCON,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"li	ZAL,A1\nli	UL,U1\n", },
+		"li	ZL,A1\nli	UL,U1\n", },
 
 { OPLTYPE,	INBREG,
 	SANY,	TANY,
 	SCON|SBREG|SNAME|SOREG,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	ZAL,A1\nmov	UL,U1\n", },
+		"mov	ZL,A1\nmov	UL,U1\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
@@ -1369,7 +1369,7 @@ struct optab table[] = {
 	SBREG,	TLONG|TULONG,
 	SANY,	TANY,
 		0,	RLEFT,
-		"inv	ZAL\ninv	UL\n", },
+		"inv	ZL\ninv	UL\n", },
 
 { COMPL,	INAREG,
 	SAREG,	TWORD,
@@ -1389,7 +1389,7 @@ struct optab table[] = {
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 	SANY,	TLONG|TULONG,
 		0,	RNULL,
-		"ZSdect	r6\nmov	ZAL,*r6\ndect	r6\nmov UL,*r6\n", },
+		"ZSdect	r6\nmov	ZL,*r6\ndect	r6\nmov UL,*r6\n", },
 
 { FUNARG,	FOREFF,
 	SZERO,	TANY,

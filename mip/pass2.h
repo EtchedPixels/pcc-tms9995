@@ -325,7 +325,7 @@ int ttype(TWORD t, int tword);
 void expand(NODE *, int, char *);
 void hopcode(int, int);
 void adrcon(CONSZ);
-char *zzzcode(NODE *, char *p);
+void zzzcode(NODE *, int);
 void insput(NODE *);
 void upput(NODE *, int);
 int tlen(NODE *p);
