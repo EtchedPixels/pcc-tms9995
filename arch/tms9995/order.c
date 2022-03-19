@@ -293,10 +293,10 @@ nspecial(struct optab *q)
 			    { NLEFT, R01 }, { NRES, FR0 }, { 0 } };
 			return s;
 		}
-		/* u8 -> u32 */
+		/* u8/16 -> u32 */
 		if (q->lshape == SAREG) {
 			static struct rspecial s[] = {
-			    { NLEFT, R1 }, { NRES, R01 }, { 0 } };
+			    { NEVER, R0 }, { NLEFT, R1 }, { NRES, R01 }, { 0 } };
 			return s;
 		}
 		break;
