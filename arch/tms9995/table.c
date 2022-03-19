@@ -131,7 +131,7 @@ struct optab table[] = {
 	SAREG,	TUCHAR,
 	SAREG,	TINT|TUNSIGNED,
 		0,	RLEFT,
-		"lsr	AL,8", },
+		"lsr	AL,8\n", },
 
 /* convert uchar to (u)int from mem */
 /* clear the target, move the byte in and swap */
