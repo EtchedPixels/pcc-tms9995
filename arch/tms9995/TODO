@@ -1,6 +1,6 @@
 - Optimise non-use of R0 indirection. Maybe also favour not using R0/R1 when
   there is a choice ?
-- Move FP, PC out of the R0-R7 range.
+- Move FP, SP out of the R0-R7 range ?
 - Use the other registers. This requires a bunch of work to replace all
   the register name printing logic and sorting out COLORMAP
 - Struct returns need to allow for extra word due to BL behaviour ?
@@ -15,8 +15,6 @@
 Longer term
 - Register support
 - Post increment modes
-- Matching +2 -2 for INCT/DECT
-- PIC data (actually really easy to do)
 
 
 
