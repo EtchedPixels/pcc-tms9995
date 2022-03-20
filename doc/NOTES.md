@@ -244,13 +244,13 @@ register allocation when invoking helper functions.
 
 The usual rewrite rules are
 
-RLEFT - clobber the left hand value. Allows an implicit move to be inserted
+RLEFT - the result ends up in the left hand variable. Also implicitly
+clobber the left hand value. Allows an implicit move to be inserted
 to get the value needed into the left hand side in order to use a two
 argument operation like "add reg1 to reg2"
-
 RDEST - used for ASSIGN and STASG
-RESC1 to 3 - ??
-RESCC - 
+RESCn - the result ends up in the nth allocated register
+RESCC - the result ends up in the condition codes ???
 
 and are used for reclamation.
 
@@ -290,6 +290,10 @@ mkext does an initial sanity check of the table during the build. It can
 also invoked after it is built with an entry number and will print the text
 of that table entry. This helps figure out the various "I broke in table
 entry 114" type errors.
+
+There are classes of rule designed to make certain tables simpler
+particularly when combined with the 'O' expansion (see below). This allows
+one set of rules to be written for a group of similar operations.
 
 ### PCONV
 
