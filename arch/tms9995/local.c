@@ -504,6 +504,10 @@ ctype(TWORD type)
 		MODTYPE(type,UNSIGNED);
 		break;
 
+	case DOUBLE:
+		MODTYPE(type, FLOAT);
+		break;
+
 	case LDOUBLE:
 		MODTYPE(type,DOUBLE);
 		break;
