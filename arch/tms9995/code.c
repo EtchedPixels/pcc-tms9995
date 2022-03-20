@@ -175,9 +175,7 @@ void
 bjobcode(void)
 {
 	extern char *asspace;
-	/* ".word" is not printed out for pdp11 as */
-	astypnames[INT] = astypnames[UNSIGNED] = "";
-	asspace = ".=.+"; /* advance counter, not .space */
+	asspace = ".ds"; /* .ds, not .space */
 }
 
 /*
@@ -190,7 +188,7 @@ funcode(NODE *p)
 {
 	NODE *r, *l;
 
-	/* Fix function call arguments. On x86, just add funarg */
+	/* Fix function call arguments. On tms9995, just add funarg */
 	for (r = p->n_right; r->n_op == CM; r = r->n_left) {
 		if (r->n_right->n_op != STARG)
 			r->n_right = block(FUNARG, r->n_right, NIL,
