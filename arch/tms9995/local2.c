@@ -182,6 +182,7 @@ prologue(struct interpass_prolog *ipp)
 	spcoff = 0;
 }
 
+/* TODO - if we did an alloca() who owned the cleanup ?? */
 void
 eoftn(struct interpass_prolog *ipp)
 {
@@ -251,8 +252,9 @@ int tlen(NODE *p)
 		case USHORT:
 			return(SZSHORT/SZCHAR);
 
+		case FLOAT:
 		case DOUBLE:
-			return(SZDOUBLE/SZCHAR);
+			return(SZFLOAT/SZCHAR);
 
 		case INT:
 		case UNSIGNED:
@@ -493,7 +495,7 @@ negcon(FILE *fp, int con)
 void
 adrcon(CONSZ val)
 {
-	printf("$" CONFMT, val);
+	printf(CONFMT, val);
 }
 
 void
