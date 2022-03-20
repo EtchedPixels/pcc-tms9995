@@ -61,223 +61,163 @@ struct optab table[] = {
 { PCONV,	INAREG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 	SAREG,			TPOINT,
+		0,	RLEFT,
+		"", },
+
+
+/* Unsigned char to char : no work needed */
+{ SCONV,	INAREG,
+	SAREG,	TUCHAR,
+	SAREG,	TCHAR,
+		0,	RLEFT,
+		"", },
+
+/* Char to unsigned char : no work needed */
+{ SCONV,	INAREG,
+	SAREG,	TCHAR,
+	SAREG,	TUCHAR,
+		0,	RLEFT,
+		"", },
+
+/* Char to int or unsigned : move byte down and sign extend */
+{ SCONV,	INAREG,
+	SAREG,	TCHAR,
+	SAREG,	TWORD,
 		NAREG|NASL,	RESC1,
-		"", },
-
-/* convert uchar to char; sign-extend byte */
-/* No work needed as the char is in the upper 8bits */
-{ SCONV,	INAREG,
-	SAREG,	TUCHAR,
-	SAREG,	TCHAR,
-		0,	RLEFT,
-		"", },
-
-/* convert char to uchar; zero-extend byte */
-/* Again no work needed */
-{ SCONV,	INAREG,
-	SAREG,	TCHAR,
-	SAREG,	TUCHAR,
-		0,	RLEFT,
-		"andi	AL,0xff\n", },
-
-/* convert char to int or unsigned.  Already so in regs */
-/* send it right */
-{ SCONV,	INAREG,
-	SAREG,	TCHAR,
-	SAREG,	TINT,
-		0,	RLEFT,
 		"asr	AL,8\n", },
 
-/* Same idea different shift - we can't use swpb as the other half may
-   contain crud */
-{ SCONV,	INAREG,
-	SAREG,	TCHAR,
-	SAREG,	TUNSIGNED,
-		0,	RLEFT,
-		"lsr	AL,8\n", },
-
-/* char (in mem) to (u)int */
-/* for now copy and mask. */
+/* Char to int or unsigned : from memory */
 { SCONV,	INAREG,
 	SOREG|SNAME,		TCHAR,
-	SAREG,			TINT,
+	SAREG,			TWORD,
 		NAREG|NASL,	RESC1,
 		"movb	AL,A1\nasr	A1,8\n", },
 
+/* Char or unsigned char to int or uint: constant */
 { SCONV,	INAREG,
-	SCON,			TCHAR,
-	SAREG,			TINT,
+	SCON,			TCHAR|TUCHAR,
+	SAREG,			TWORD,
 		NAREG|NASL,	RESC1,
-		"li	A1,AL * 256\n", },
+		"li	A1,AL\n", },
 
-/* char (in mem) to (u)int */
-/* for now copy and mask. */
-/* Needs a helper to generate the signed n << 8 for const */
-{ SCONV,	INAREG,
-	SCON,	TCHAR,
-	SAREG,	TUNSIGNED,
-		NAREG|NASL,	RESC1,
-		"li	A1, AL\n", },
-
-{ SCONV,	INAREG,
-	SOREG|SNAME,	TCHAR,
-	SAREG,	TUNSIGNED,
-		NAREG|NASL,	RESC1,
-		"movb	AL,A1\nlsr	A1,8\n", },
-
-/* convert uchar to (u)int in reg */
-/* send it down 8bits */
+/* Unsigned char to int or uint: register */
 { SCONV,	INAREG,
 	SAREG,	TUCHAR,
-	SAREG,	TINT|TUNSIGNED,
-		0,	RLEFT,
+	SAREG,	TWORD,
+		NAREG|NASL,	RESC1,
 		"lsr	AL,8\n", },
 
-/* convert uchar to (u)int from mem */
-/* clear the target, move the byte in and swap */
+/* Unsigned char to int or uint: memory */
 { SCONV,	INAREG,
 	SOREG|SNAME,	TUCHAR,
 	SAREG,	TINT|TUNSIGNED,
 		NAREG,	RESC1,
 		"clr	A1\nmovb	AL,A1\nswpb	A1\n", },
 
-/* convert char to (u)long */
-/* Use a helper as we have no sign ext ops*/
+/* char to ulong: register - no sign extend to expands somewhat */
 { SCONV,	INBREG,
 	SAREG,	TCHAR,
 	SANY,	TULONG|TLONG,
-		NBREG|NBSL,	RLEFT,
+		NBREG|NBSL,	RESC1,
 		"clr	U1\nsra	A1,8\nci	A1,0\nZBjge	ZE\ndec	A1\nZD", },
 
-/* convert uchar to ulong */
-/* Just clear the extra */
+/* Unsigned char to unsigned long: register */
 { SCONV,	INBREG,
 	SAREG,	TUCHAR,
 	SANY,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
 		"lsr	A1,8\nclr	U1\n", },
 
-/* (u)char -> float/double */
+/* Unsigned char to float/double */
 /* Constant is forced into R0, masked and converted */
 { SCONV,	INCREG,
 	SAREG,	TCHAR|TUCHAR,
-	SANY,	TFLOAT|TDOUBLE,
-		NSPECIAL,	RLEFT,
+	SANY,	TFLOAT,
+		NSPECIAL|NCREG,	RESC1,
 		"andi	AL,0xff\ncir	AL\n", },
 
-/* convert (u)int to char */
+/* Int or unsigned to char or unsigned: register */
 { SCONV,	INAREG,
 	SAREG,	TWORD,
 	SANY,	TCHAR,
-		NAREG|NASL,	RLEFT,
+		NAREG|NASL,	RESC1,
 		"swpb	AL\n", },
 
-/* convert (u)int to uchar  */
-{ SCONV,	INAREG,
-	SAREG,	TWORD,
-	SANY,	TUCHAR,
-		NAREG,	RESC1,
-		"clr	A1\nmovb	AL,A1\nswpb	A1\n", },
-
-/* convert (u)int to (u)int */
-/* No work needed */
+/* Int or unsigned to int or unsigned: register */
 { SCONV,	INAREG,
 	SAREG,	TWORD,
 	SANY,	TWORD,
 		0,	RLEFT,
 		"", },
 
-/* convert pointer to char */
-/* flip bytes */
+/* Pointer to char: register */
 { SCONV,	INAREG,
 	SAREG,	TPOINT,
 	SAREG,	TCHAR,
-		0,	RLEFT,
+		NAREG|NASL,	RESC1,
 		"swpb	AL\n", },
 
-/* convert pointer to (u)int */
-/* No work needed */
+/* Pointer to int or uint: no work */
 { SCONV,	INAREG,
 	SAREG,	TPOINT,
 	SANY,	TWORD,
 		0,	RLEFT,
 		"", },
 
-/* convert int to long */
-{ SCONV,	INBREG,
-	SAREG,	TINT|TPOINT,
-	SANY,	TLONG,
-		NBREG|NBSL,	RLEFT,
-		"clr	U1\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
-
+/* Int to long/ulong:  Expands due to lack of sign extend */
 { SCONV,	INBREG,
 	SAREG,	TINT|TPOINT,
 	SANY,	TLONG|TULONG,
-		NBREG|NBSL,	RLEFT,
+		NBREG|NBSL,	RESC1,
 		"clr	U1\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
 
-/* Generic move and conversion for int to long */
-{ SCONV,	INBREG,
-	SAREG|SOREG|SNAME,	TINT,
-	SANY,	TLONG|TLONG,
-		NBREG,	RESC1,
-		"clr	U1\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
-
-/* If the value is in a reg pair then we have to swap the registers */
+/* int to float: nice and easy except for the register swap */
 { SCONV,	INCREG,
 	SAREG,	TINT,
-	SANY,	TFLOAT|TDOUBLE,
-		NSPECIAL,	RLEFT,
+	SANY,	TFLOAT,
+		NSPECIAL|NCREG,	RESC1,
 		"bl	@cir_AL\n", },
 
+/* int to float: object in memory: actually easier */
 { SCONV,	INCREG,
 	SNAME|SOREG,	TINT,
-	SANY,	TFLOAT|TDOUBLE,
-		NSPECIAL,	RLEFT,
+	SANY,	TFLOAT,
+		NSPECIAL|NCREG,	RESC1,
 		"cir	AL\n", },
 
+/* unsigned in to long or ulong: just clear the upper */
 { SCONV,	INBREG,
 	SAREG,	TUNSIGNED,
 	SANY,	TLONG|TULONG,
-		NBREG|NBSL,	RLEFT,
+		NBREG|NBSL,	RESC1,
 		"clr	UL\n", },
 
-/* Generic move and conversion for unsigned to long/ulong */
+/* unsigned int to long or ulong: generic move and conversion for unsigned to long/ulong */
 { SCONV,	INBREG,
-	SAREG|SOREG|SNAME,	TUNSIGNED,
+	SOREG|SNAME,	TUNSIGNED,
 	SANY,	TLONG|TULONG,
-		NBREG,	RESC1,
+		NBREG|NBSL,	RESC1,
 		"clr	U1\n", },
 
-/* uint -> double. We don't have this operation so use the 32bit one having
-   cleared the other half */
+/* unsigned int to float : we don't have a 16bit op for it. use the 32bit one */
 { SCONV,	INCREG,
 	SAREG,		TUNSIGNED,
-	SANY,		TFLOAT|TDOUBLE,
-		NSPECIAL|NCSL,	RLEFT,
+	SANY,		TFLOAT,
+		NSPECIAL,	RLEFT,
 		"clr	r0\ncer AL\n", },
 
-/* (u)long -> char */
-/* Works for memory and register */
+/* long or unsigned long to char or uchar: lower byte swapped*/
 { SCONV,	INAREG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
-	SAREG,			TCHAR,
+	SAREG,			TCHAR|TUCHAR,
 		NAREG|NASL,	RESC1,
 		"swpb	A1\n", },
 
-/* (u)long -> uchar */
-/* Works for memory and register */
-{ SCONV,	INAREG,
-	SBREG|SOREG|SNAME,	TLONG|TULONG,
-	SAREG,			TUCHAR,
-		NAREG|NASL,	RESC1,
-		"swpb	A1\n", },
-
-/* long -> int */
+/* long or unsigned long to int or uintt: no work required */
 { SCONV,	INAREG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 	SAREG,			TWORD,
-		NAREG|NASL,	RESC1,
+		0,	RLEFT,
 		"", },
 
 /* (u)long -> (u)long, nothing */
@@ -294,44 +234,38 @@ struct optab table[] = {
 /* long -> float/double */
 { SCONV,	INCREG,
 	SNAME|SOREG,	TLONG,
-	SANY,		TFLOAT|TDOUBLE,
+	SANY,		TFLOAT,
 		NSPECIAL,	RLEFT,
 		"cer AL\n", },
 
 /* ulong -> float/double */
 { SCONV,	INCREG,
 	SBREG,		TULONG,
-	SANY,		TFLOAT|TDOUBLE,
+	SANY,		TFLOAT,
 		NSPECIAL|NCSL,	RLEFT,
 		"bl	@u32fp\n", },
 
-/* float/double -> (u)long */
 
+/* float to long or ulong : helper converts and flips in situ */
 /* CRE needs the words flipping */
 { SCONV,	INBREG,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 	SANY,	TLONG|TULONG,
 		NSPECIAL,	RLEFT,
 		"bl	@cre_flip\n" },
 
-/* double -> int*/
+/* float to int : special rule plonks it in the right place */
 { SCONV,	INAREG,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 	SANY,	TINT,
 		NSPECIAL,	RLEFT,
 		"cri", },
 
 /* float/double -> float/double */
 { SCONV,	INCREG,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 	SANY,	TANY,
 		0,	RLEFT,
-		"", },
-
-{ SCONV,	INCREG,
-	SCON|SOREG|SNAME,	TFLOAT|TDOUBLE,
-	SANY,	TANY,
-		NCREG|NCSL,	RLEFT,
 		"", },
 
 /*
@@ -387,25 +321,25 @@ struct optab table[] = {
 
 { CALL,		INCREG,
 	SNAME|SCON|SOREG,	TANY,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 		NCREG,	RESC1,
 		"bl	AL\nZC", },
 
 { UCALL,	INCREG,
 	SNAME|SCON|SOREG,	TANY,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 		NCREG,	RESC1,
 		"bl	AL\n", },
 
 { CALL,		INCREG,
 	SAREG,	TANY,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 		NCREG|NCSL,	RESC1,
 		"bl	*AL\nZC", },
 
 { UCALL,	INCREG,
 	SAREG,	TANY,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 		NCREG|NCSL,	RESC1,
 		"bl	*AL\n", },
 
@@ -510,16 +444,6 @@ struct optab table[] = {
 		0,	RLEFT|RESCC,
 		"ai	AL, 0x100\n", },
 
-#if 0
-/* add one for char to memory. No obvious way to do this - no incb
-   only ab =@lit, */
-{ PLUS,		FOREFF|FORCC,
-	SNAME|SOREG,	TCHAR|TUCHAR,
-	SONE,			TANY,
-		0,	RLEFT|RESCC,
-		"inc	AL\n", },
-#endif		
-
 /* No ADC */
 { PLUS,		INBREG|FOREFF,
 	SBREG,			TLONG|TULONG,
@@ -549,7 +473,7 @@ struct optab table[] = {
 
 /* Add to reg left and reclaim reg */
 { PLUS,		INAREG|FOREFF|FORCC,
-	SAREG|SNAME|SOREG,	TWORD|TPOINT,
+	SAREG,		TWORD|TPOINT,
 	SCON,			TWORD|TPOINT,
 		0,	RLEFT|RESCC,
 		"ai	AL,AR\n", },
@@ -568,12 +492,6 @@ struct optab table[] = {
 		0,	RLEFT|RESCC,
 		"a	AR,AL\n", },
 
-{ PLUS,		FOREFF|FORCC,
-	SNAME|SOREG,	TWORD|TPOINT,
-	SCON,	TWORD|TPOINT,
-		0,	RLEFT|RESCC,
-		"ai	AL,AR\n", },
-
 { PLUS,		INAREG|FOREFF|FORCC,
 	SAREG,			TCHAR|TUCHAR,
 	SAREG|SNAME|SOREG,	TCHAR|TUCHAR,
@@ -588,12 +506,12 @@ struct optab table[] = {
 		"a	@__litb_AR,AL\n", },
 
 /* floating point */
+
 { PLUS,		INCREG|FOREFF|FORCC,
-	SCREG,			TFLOAT|TDOUBLE,
-	SCREG|SNAME|SOREG,	TFLOAT|TDOUBLE,
+	SCREG,			TFLOAT,
+	SCON|SCREG|SNAME|SOREG,	TFLOAT,
 		0,	RLEFT|RESCC,
 		"ar	AR\n", },
-
 
 { MINUS,		INBREG|FOREFF,
 	SBREG,		TLONG|TULONG,
@@ -633,38 +551,31 @@ struct optab table[] = {
 		0,	RLEFT,
 		"s	AR,AL\n", },
 
-/* Sub from anything left but use only for side effects */
-{ MINUS,	FOREFF|INAREG|FORCC,
-	SAREG|SNAME|SOREG,	TWORD|TPOINT,
-	SAREG|SNAME|SOREG|SCON,	TWORD|TPOINT,
-		0,	RLEFT|RESCC,
-		"s	AR,AL\n", },
-
 /* Sub one left but use only for side effects */
-{ MINUS,	FOREFF|FORCC,
+{ MINUS,	FOREFF,
 	SAREG,		TCHAR|TUCHAR,
 	SONE,			TANY,
-		0,	RLEFT|RESCC,
+		0,	RLEFT,
 		"ai	AL, -0x100\n", },
 
 /* Sub from anything left but use only for side effects. Need to review
    because of the SUB 0 funny */
-{ MINUS,		FOREFF|FORCC,
+{ MINUS,		FOREFF,
 	SAREG|SNAME|SOREG,	TCHAR|TUCHAR,
 	SAREG|SNAME|SOREG,	TCHAR|TUCHAR,
-		0,	RLEFT|RESCC,
+		0,	RLEFT,
 		"sb	AR,AL\n", },
 
-{ MINUS,		FOREFF|FORCC,
+{ MINUS,		FOREFF,
 	SAREG|SNAME|SOREG,	TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
-		0,	RLEFT|RESCC,
+		0,	RLEFT,
 		"swpb	AL\nsi	AR,AL\nswpb	AL\n", },
 
 /* floating point */
 { MINUS,	INCREG|FOREFF|FORCC,
-	SCREG,			TFLOAT|TDOUBLE,
-	SCREG|SNAME|SOREG,	TFLOAT|TDOUBLE,
+	SCREG,			TFLOAT,
+	SCREG|SNAME|SOREG,	TFLOAT,
 		0,	RLEFT|RESCC,
 		"sr	AR\n", },
 
@@ -688,7 +599,7 @@ struct optab table[] = {
 
 /* Shift of a register by a constant, works for 8 and 16bit */
 { LS,	INAREG|FOREFF,
-	SAREG,	TINT|TCHAR|TUNSIGNED|TUCHAR,
+	SAREG,	TWORD|TCHAR|TUCHAR,
 	SCON,	TWORD,
 	0,	RLEFT,
 		"asl	AL,AR\n", },
@@ -703,14 +614,14 @@ struct optab table[] = {
 
 /* Constant shift of a word in memory */
 { LS,	INAREG|FOREFF,
-	SOREG|SNAME, TINT|TUNSIGNED,
+	SOREG|SNAME, TWORD,
 	SCON,	TWORD,
 	0,	RLEFT,
 		"asl	AL,AR\n", },
 
 /* Register shift of a word in memory */
 { LS,	INAREG|FOREFF,
-	SOREG|SNAME,	TINT|TUNSIGNED,
+	SOREG|SNAME,	TWORD,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
 		"asl	AL,AR\n", },
@@ -719,73 +630,49 @@ struct optab table[] = {
 
 /* Shift of a register by a constant, works for 8 and 16bit */
 { RS,	INAREG|FOREFF,
-	SAREG,	TUNSIGNED|TUCHAR,
+	SAREG,	TUCHAR|TUNSIGNED,
 	SCON,	TWORD,
 	0,	RLEFT,
-		"lsr	AL,AR\n", },
+		"lsr	AL,AR\n", },	/* XXX */
 		
-/* Shift of a register by a register. We must shift by R0, so we cannot
-   keep the data in R0 */
 { RS,	INAREG|FOREFF,
-	SAREG,	TUNSIGNED|TUCHAR,
-	SAREG,	TWORD,
-	NSPECIAL,	RLEFT,
-		"lsr	AL,AR\n", },
-
-/* Constant shift of a word in memory */
-{ RS,	INAREG|FOREFF,
-	SOREG|SNAME, TINT|TUNSIGNED,
-	SCON,	TWORD,
-	0,	RLEFT,
-		"lsr	AL,AR\n", },
-
-/* Register shift of a word in memory */
-{ RS,	INAREG|FOREFF,
-	SOREG|SNAME,	TUNSIGNED,
+	SAREG,	TUCHAR|TUNSIGNED,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
 		"lsr	AL,AR\n", },
 
 /* And signed */
 
-/* Shift of a register by a constant, works for 8 and 16bit */
 { RS,	INAREG|FOREFF,
-	SAREG,	TINT|TCHAR,
+	SAREG,	TCHAR|TINT,
 	SCON,	TWORD,
 	0,	RLEFT,
 		"asr	AL,AR\n", },
 		
-/* Shift of a register by a register. We must shift by R0, so we cannot
-   keep the data in R0 */
 { RS,	INAREG|FOREFF,
-	SAREG,	TINT|TCHAR,
+	SAREG,	TCHAR|TINT,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
 		"asr	AL,AR\n", },
 
-/* Constant shift of a word in memory */
-{ RS,	INAREG|FOREFF,
-	SOREG|SNAME, TINT,
-	SCON,	TWORD,
-	0,	RLEFT,
-		"asr	AL,AR\n", },
-
-/* Register shift of a word in memory */
-{ RS,	INAREG|FOREFF,
-	SOREG|SNAME,	TINT,
-	SAREG,	TWORD,
-	NSPECIAL,	RLEFT,
-		"asr	AL,AR\n", },
+/* And 32bit */
 
 { RS,	INBREG|FOREFF,
 	SBREG,	TLONG,
-	SAREG,	TINT|TUNSIGNED,
+	SAREG,	TWORD,
 		NSPECIAL,	RLEFT,
 		"bl	@rss32\n", },
 
 { RS,	INBREG|FOREFF,
-	SBREG,	TLONG|TULONG,
-	SAREG,	TUNSIGNED,
+	SBREG,	TULONG,
+	SAREG,	TWORD,
+		NSPECIAL,	RLEFT,
+		"bl	@rsu32\n", },
+
+
+{ RS,	INBREG|FOREFF,
+	SBREG,	TULONG,
+	SCON,	TWORD,
 		NSPECIAL,	RLEFT,
 		"bl	@rsu32\n", },
 
@@ -812,13 +699,6 @@ struct optab table[] = {
 	SZERO,		TANY,
 		0,	RDEST,
 		"clr	AL\n", },
-
-/* Clear byte at address.  No reg here. */
-{ ASSIGN,	FOREFF,
-	SNAME|SOREG,	TCHAR|TUCHAR,
-	SZERO,		TANY,
-		0,	RDEST,
-		"clrb	AL\n", },
 
 /* Clear byte in reg */
 { ASSIGN,	FOREFF|INAREG,
@@ -867,7 +747,7 @@ struct optab table[] = {
 	SNAME|SOREG,	TLONG|TULONG,
 	SNAME|SOREG,	TLONG|TULONG,
 		0,	0,
-		"mov	AR,AL\nmov	UR,UL\n", },
+		"mov	ZR,ZL\nmov	UR,UL\n", },
 
 { ASSIGN,	INBREG|FOREFF,
 	SBREG,	TLONG|TULONG,
@@ -938,34 +818,22 @@ struct optab table[] = {
 /* Floating point */
 
 { ASSIGN,	FOREFF|INCREG,
-	SCREG,		TDOUBLE|TFLOAT,
-	SCREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
+	SCREG,		TFLOAT,
+	SCON	,	TFLOAT,
+		0,	RDEST,
+		"li	ZL,ZR\nli	UL,UR\n", },
+
+{ ASSIGN,	FOREFF|INCREG,
+	SCREG,		TFLOAT,
+	SNAME|SOREG,	TFLOAT,
 		0,	RDEST,
 		"lr	AR\n", },
 
 { ASSIGN,	FOREFF|INCREG,
-	SCREG,		TDOUBLE|TFLOAT,
-	SCON	,	TDOUBLE|TFLOAT,
-		0,	RDEST,
-		"li	AL,AR\nli	UL,UR\n", },
-
-{ ASSIGN,	FOREFF|INCREG,
-	SNAME|SOREG,	TDOUBLE|TFLOAT,
-	SNAME|SOREG,	TDOUBLE|TFLOAT,
-		0,	RDEST,
-		"mov	AR,AL\nmov	UR,UL\n", },
-
-{ ASSIGN,	FOREFF|INCREG,
-	SNAME|SOREG,	TDOUBLE|TFLOAT,
-	SCREG	,	TDOUBLE|TFLOAT,
+	SNAME|SOREG,	TFLOAT,
+	SCREG,		TFLOAT,
 		0,	RDEST,
 		"str	AL\n", },
-
-{ ASSIGN,	FOREFF|INCREG,
-	SCREG,		TDOUBLE|TFLOAT,
-	SCREG	,	TDOUBLE|TFLOAT,
-		0,	RDEST,
-		"mov	AR,AL\nmov	UR,UL\n", },
 
 /* Struct assigns */
 { STASG,	FOREFF|INAREG,
@@ -1004,8 +872,8 @@ struct optab table[] = {
 		"bl	mul32\n", },
 
 { MUL,	INCREG,
-	SCREG,			TFLOAT|TDOUBLE,
-	SCREG|SOREG|SNAME,	TFLOAT|TDOUBLE,
+	SCREG,			TFLOAT,
+	SCREG|SOREG|SNAME,	TFLOAT,
 		NSPECIAL,	RLEFT,
 		"mr	AR\n", },
 
@@ -1051,8 +919,8 @@ struct optab table[] = {
 		"bl	@divs32\n", },
 
 { DIV,	INCREG,
-	SCREG,			TDOUBLE|TFLOAT,
-	SCREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
+	SCREG,			TFLOAT,
+	SCREG|SNAME|SOREG,	TFLOAT,
 		NSPECIAL,	RLEFT,
 		"dr	AR\n", },
 
@@ -1101,39 +969,27 @@ struct optab table[] = {
  */
 { UMUL,	INBREG,
 	SANY,	TPOINT|TWORD,
-	SOREG,	TLONG|TULONG,
+	SOREG|SNAME,	TLONG|TULONG,
 		NBREG,	RESC1, /* |NBSL - may overwrite index reg */
 		"mov	ZL,Z1\nmov	UL,U1\n", },
 
 { UMUL,	INAREG,
 	SANY,	TPOINT|TWORD,
-	SOREG,	TPOINT|TWORD,
+	SOREG|SNAME,	TPOINT|TWORD,
 		NAREG|NASL,	RESC1,
 		"mov	AL,A1\n", },
 
 { UMUL,	INAREG,
 	SANY,	TANY,
-	SOREG,	TCHAR|TUCHAR,
+	SOREG|SNAME,	TCHAR|TUCHAR,
 		NAREG|NASL,	RESC1,
 		"movb	AL,A1\n", },
 
 { UMUL,	INCREG,
-	SOREG|SNAME,	TANY,
-	SCREG,	TDOUBLE|TFLOAT,
+	SANY,	TANY,
+	SOREG|SNAME,	TFLOAT,
 		NCREG,	RESC1,
 		"lr	AL\n", },
-
-{ UMUL,	INCREG,
-	SCON,	TANY,
-	SOREG,	TFLOAT,
-		NCREG,	RESC1,
-		"li	AL,A1\nli	UL,U1\n", },
-
-{ UMUL,	INCREG,
-	SOREG|SNAME,	TANY,
-	SOREG,	TFLOAT,
-		NCREG,	RESC1,
-		"mov	AL,A1\nmov	UL,U1", },
 
 /*
  * Logical/branching operators
@@ -1165,8 +1021,8 @@ struct optab table[] = {
 /* FIXME: need to tell it that this destroys right hand and hope that's
    still usable, or need helper - which ? */
 { OPLOG,	FORCC,
-	SNAME|SOREG,	TFLOAT|TDOUBLE,
-	SCREG,		TFLOAT|TDOUBLE,
+	SNAME|SOREG,	TFLOAT,
+	SCREG,		TFLOAT,
 		0, 	RESCC,
 		"sr	AL\n", },
 
@@ -1295,29 +1151,30 @@ struct optab table[] = {
  */
 
 /* XXX - avoid OREG index register to be overwritten */
-/* Const form needed */
+
+/* We have to keep separate const forms because of li v mov */
 { OPLTYPE,	INBREG,
 	SANY,	TANY,
 	SCON,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"li	ZL,A1\nli	UL,U1\n", },
+		"li	ZL,Z1\nli	UL,U1\n", },
 
 { OPLTYPE,	INBREG,
 	SANY,	TANY,
-	SCON|SBREG|SNAME|SOREG,	TLONG|TULONG,
+	SBREG|SNAME|SOREG,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	ZL,A1\nmov	UL,U1\n", },
+		"mov	ZL,Z1\nmov	UL,U1\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
 	SCON,		TWORD|TPOINT,
-		NAREG|NASR,	RESC1,
+		NAREG,	RESC1,
 		"li	A1,AL\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
 	SCON,		TCHAR|TUCHAR,
-		NAREG|NASR,	RESC1,
+		NAREG,	RESC1,
 		"li	A1*256,AL\n", },
 
 { OPLTYPE,	INAREG,
@@ -1328,21 +1185,22 @@ struct optab table[] = {
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
-	SAREG|SOREG|SNAME,	TCHAR,
+	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 		NAREG,		RESC1,
 		"movb	AL,A1\n", },
 
-{ OPLTYPE,	INAREG,
-	SANY,	TANY,
-	SAREG|SOREG|SNAME,	TUCHAR,
-		NAREG,		RESC1,
-		"movb	AL,A1", },
+{ OPLTYPE,	INCREG,
+	SANY,			TANY,
+	SCON,			TFLOAT,
+		NCREG,		RESC1,
+		"li	r0,UL\nli	r1,ZL", },
 
 { OPLTYPE,	INCREG,
 	SANY,			TANY,
-	SOREG|SNAME,		TDOUBLE|TFLOAT,
+	SCREG|SOREG|SNAME,	TFLOAT,
 		NCREG,		RESC1,
 		"lr	AL\n", },
+
 
 /*
  * Negate a word.
@@ -1360,7 +1218,7 @@ struct optab table[] = {
 		"bl	@neg32\n", },
 
 { UMINUS,	INCREG|FOREFF,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 	SANY,	TANY,
 		0,	RLEFT,
 		"negr\n", },
@@ -1382,10 +1240,11 @@ struct optab table[] = {
  * Arguments to functions.
  */
 { FUNARG,	FOREFF,
-	SBREG|SNAME|SOREG,	TLONG|TULONG,
 	SZERO,	TLONG|TULONG,
+	SANY,	TANY,
 		0,	RNULL,
 		"ZSdect	r6\nclr	*r6\ndect	r6\nclr	*r6\n", },
+
 { FUNARG,	FOREFF,
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 	SANY,	TLONG|TULONG,
@@ -1438,7 +1297,7 @@ struct optab table[] = {
 		"ZSdect	r6\nmovb	AL,*r6\n", },
 
 { FUNARG,	FOREFF,
-	SCREG,	TFLOAT|TDOUBLE,
+	SCREG,	TFLOAT,
 	SANY,		TANY,
 		0,	RNULL,
 		"ZSdect	r6\nmov r1,*r6\ndect	r6\nmov r0,*r6\n", },
