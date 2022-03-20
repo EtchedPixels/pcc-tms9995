@@ -281,7 +281,8 @@ nspecial(struct optab *q)
 		if (q->lshape == SAREG || q->lshape == (SOREG|SNAME)) {
 			/* The shift amount must be in R0 */
 			static struct rspecial s[] = {
-			    { NOLEFT, R0 }, { NEVER, R0 }, {NRIGHT, R0 }, { 0 } };
+			    {NRIGHT, R0 }, { NOLEFT, R0 }, { 0 } };
+			printf("MOO");
 			return s;
 		}
 		if (q->visit == (INBREG | FOREFF)) {
@@ -364,7 +365,7 @@ nspecial(struct optab *q)
 int
 setorder(NODE *p)
 {
-	return 0; /* nothing differs on x86 */
+	return 0; /* nothing differs on tms9995 */
 }
 
 /*
