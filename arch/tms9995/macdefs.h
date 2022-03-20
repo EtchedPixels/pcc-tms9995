@@ -90,7 +90,7 @@
 
 /* Default char is unsigned */
 #define	CHAR_UNSIGNED
-#define	BOOL_TYPE	CHAR	/* what used to store _Bool */
+#define	BOOL_TYPE	UNSIGNED	/* what used to store _Bool */
 
 /*
  * Use large-enough types.
@@ -169,6 +169,7 @@ typedef long long OFFSZ;
 #define	RP34	0x13
 
 #define	FR0	0x20	/* Results accumulate here */
+#define	FR1	0x21	/* Temporary to see if fake FR fixes stuff */
 
 #define	LL0	0x30
 #define	LL1	0x31
@@ -182,12 +183,12 @@ typedef long long OFFSZ;
 		SAREG|PERMREG, SAREG|PERMREG, SAREG|PERMREG, 0, 0, 0, 0, 0, \
 	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, 0, 0, 0, 0,\
 		0, 0, 0, 0, 0, 0, 0, 0, \
-	SCREG|TEMPREG, 0, 0, 0, 0, 0, 0, 0,		\
+	SCREG|TEMPREG, SCREG|TEMPREG, 0, 0, 0, 0, 0, 0,		\
 		0, 0, 0, 0, 0, 0, 0, 0, \
 	SDREG, SDREG, SDREG, SDREG,
 
 #define	ROVERLAP \
-	/* 8 basic registers */\
+	/* 16 basic registers */\
 	{ RP01, FR0, -1 },	\
 	{ RP01, RP12, FR0, -1 },	\
 	{ RP12, RP23, -1 },	\
@@ -205,7 +206,7 @@ typedef long long OFFSZ;
 	{ -1 },			\
 	{ -1 },			\
 \
-	/* 4 long registers */\
+	/* 4 long registers made using pairs */\
 	{ R0, R1, RP12, FR0, -1 },		\
 	{ R1, R2, RP01, RP23, FR0, -1 },		\
 	{ R2, R3, RP12, RP34, -1 },		\
