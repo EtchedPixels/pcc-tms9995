@@ -227,9 +227,8 @@ nspecial(struct optab *q)
 				return longfunconearg;
 			return longfunc;
 		} else if (q->visit == INCREG) {
-		    /* Can we mul by itself ?? FIXME NORIGHT FR0 ? */
 			static struct rspecial  s[] = {
-			    { NLEFT, FR0 }, { NRES, FR0 }, { 0, } };
+			    { NLEFT, FR0 }, {NEVER, FR0}, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, } };
 			return s;
 		}
 		break;
@@ -244,10 +243,9 @@ nspecial(struct optab *q)
 			if (q->rshape == SCON)
 				return longfunconearg;
 			return longfunc;
-		} else if (q->visit == INCREG) {
+                } else if (q->visit == INCREG) {
 			static struct rspecial  s[] = {
-			    /* Can we div by itself ?? FIXME NORIGHT FR0 ? */
-			    { NLEFT, FR0 }, { NRES, FR0 }, { 0, } };
+			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, } };
 			return s;
 		}
 		break;
@@ -271,6 +269,12 @@ nspecial(struct optab *q)
 			return longfunconearg;
 		if (q->visit == (INBREG|FOREFF))
 			return longfunc;
+		if (q->visit == (INCREG|FOREFF|FORCC)) {
+			printf("PLUS FR0, !FR0, to FR0\n");
+			static struct rspecial  s[] = {
+			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NEVER, FR0 }, { NRES, FR0 }, { 0, } };
+			return s;
+		}
 		break;
 	case UMINUS:
 		if (q->visit == (INBREG|FOREFF))
@@ -334,6 +338,20 @@ nspecial(struct optab *q)
 			return s;
 		}
 	
+		break;
+	case OPLTYPE:
+		if (q->visit == INCREG) {
+			static struct rspecial  s[] = {
+			    { NLEFT, FR0 }, { NRES, FR0 }, { 0, } };
+			return s;
+		}
+		break;
+	case OPLOG:
+		if (q->visit == FORCC && q->rshape == SCREG) {
+			static struct rspecial  s[] = {
+			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, } };
+			return s;
+		}
 		break;
 	case STASG: {
 			/* R0 = tmp counter. R1 source, R2 dest */
