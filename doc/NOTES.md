@@ -178,6 +178,11 @@ Registers are allocated low to high within a class. Thus if there are higher
 cost or less functional registers you want to minimise use of they should be
 highest numbered in the logical numbering of the class.
 
+The minimum size of a class appears to be two. Having one item in the class
+causes some operations to allocate a bogus non existent register and then
+get confused and die when trying to evaluate things like x + 1 / y in that
+class.
+
 ## Tables
 
 The tables describe in generic terms a set of operations with constraints
@@ -303,7 +308,9 @@ to be shifted when converting or if index and computation registers differ.
 
 ### SCONV
 
-Shape conversions. These move things between different types and classes.
+Shape conversions. These move things between different types and class. When
+an object is moved between classes the rule must include an NxREG, RESC1
+pair or the compiler will get its types in a knot and confused.
 
 ### CALL/UCALL
 
