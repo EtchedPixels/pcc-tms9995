@@ -69,7 +69,20 @@ static const char *rname[] = {
 	"r15"
 };
 
-/* TODO: fr[n] */
+static const char *fr_name[] = {
+	"fr0",
+	"@fr1",
+	"@fr2"
+};
+
+static const char *fr_name_pic[] = {
+	"  xxxfr0",
+	"2+@fr1(r15)",
+	"2+@fr2(r15)",
+	"XXX"
+};
+
+
 /* Print the name of a register */
 static const char *regname(int n)
 {
@@ -80,7 +93,7 @@ static const char *regname(int n)
 		/* This is only valid as an internal working name for debug */
 		return rpname[n & 0x07];
 	case CLASSC:
-		return "fr0";
+		return kflag ? fr_name_pic[n & 0x03]: fr_name[n & 0x03];
 	default:
 		return "XXX";
 	}
@@ -101,6 +114,8 @@ static const char *regname_l(int n)
 		return rname[n];
 	case CLASSC:
 		/* fr0 is an alias of r0/r1 */
+		if (n > 0)
+			return 2 + (kflag ? fr_name_pic[n & 0x03]: fr_name[n & 0x03]);
 		return "r1";
 	default:
 		return "XXX";
@@ -116,6 +131,8 @@ static const char *regname_h(int n)
 		n = classbmap[n & 0x07];
 		return rname[n];
 	case CLASSC:
+		if (n > 0)
+			return kflag ? fr_name_pic[n & 0x03]: fr_name[n & 0x03];
 		return "r0";
 	default:
 		return "xxx";
@@ -325,9 +342,67 @@ twolcomp(NODE *p)
         deflab(s);
 }
 
+/* Move floating point between two registers */
+static void fpmove_r(int s, int d)
+{
+	char *or = kflag ? "(r15)" : "";
+	if (s == d) {
+		printf(";fpmove_r no-op %d %d\n", s, d);
+		return;
+	}
+	if (d == FR0)
+		printf("lr	@fr%d%s\n", s & 0x0F, or);
+	else if (s == FR0)
+		printf("str	@fr%d%s\n", d & 0x0F, or);
+	else {
+		printf(";fpmove r r %d %d\n", s, d);
+		s &= 0x0F;
+		d &= 0x0F;
+		printf("mov	@fr%d%s, @fr%d%s\n",
+			s, or, d, or);
+		printf("mov	@fr%d+2%s, @fr%d+2%s\n",
+			s, or, d, or);
+	}
+}
+
+/* R into L */
+void fpmove(NODE *p)
+{
+	int r = regno(p->n_right);
+	int l = regno(p->n_left);
+
+	printf("fpmov %d %d", r, l);
+	/* Is the source a register ? */
+	if (p->n_right->n_op == REG) {
+		/* reg to reg allowing for virtual registers */
+		if (p->n_left->n_op == REG) {
+			fpmove_r(r, l);
+			return;
+		}
+		if (r == FR0) {
+			/* real fp */
+			expand(p, 0, "str	AL\n");
+			return;
+		}
+	}
+	printf("leftop %o\n", p->n_left->n_op);
+	if (p->n_left->n_op == REG && l == FR0) {
+		/* real fp dest */
+		expand(p, 0, "lr	AR\n");
+		return;
+	}
+	expand(p, 0, "mov	ZR,ZL\nmov	UR,UL\n");
+}
+
+/* rmove is used directly for temporary register moves in the compiler as
+   well as by rule based code */
 void
 rmove(int s, int d, TWORD t)
 {
+	if (t == FLOAT) {
+		fpmove_r(s, d);
+		return;
+	}
 	if (t < LONG || t > BTMASK) {
 		printf("mov	%s,%s\n",
 			regname(s), regname(d));
@@ -385,6 +460,9 @@ void zzzcode(NODE *p, int c)
 	case 'G':
 		rmove(regno(p->n_right), regno(p->n_left), p->n_type);
 		break;
+	case 'H': /* Load and store of fp registers real or fake */
+		fpmove(p);
+		break;
 #if 0
 	case 'G': /* printout a subnode for post-inc */
 		adrput(stdout, p->n_left->n_left);
@@ -436,6 +514,7 @@ void zzzcode(NODE *p, int c)
 		printf("jne	" LABFMT "\n", o);
 		spcoff += argsiz(p);
 		break;
+	/* L see above */
 	case 'S': /* Adust sp for argument push */
 		spcoff += argsiz(p);
 		break;
@@ -824,12 +903,10 @@ char *rnames[] = {
 	"r01", "r12", "r23", "r34", "XXX", "XXX", "XXX", "XXX",
 	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
 	"fr0", "fr1", "fr2", "XXX", "XXX", "XXX", "XXX", "XXX",
-	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX"
+	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
+	"ll0", "ll1", "ll2", "ll3"
 };
  
- /*
-};
-
 /*
  * Return a class suitable for a specific type.
  */
