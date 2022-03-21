@@ -169,7 +169,8 @@ typedef long long OFFSZ;
 #define	RP34	0x13
 
 #define	FR0	0x20	/* Results accumulate here */
-#define	FR1	0x21	/* Temporary to see if fake FR fixes stuff */
+#define FR1	0x21	/* Fake FP register to keep code generator sane */
+#define FR2	0x22	/* Ditto */
 
 #define	LL0	0x30
 #define	LL1	0x31
@@ -183,7 +184,7 @@ typedef long long OFFSZ;
 		SAREG|PERMREG, SAREG|PERMREG, SAREG|PERMREG, 0, 0, 0, 0, 0, \
 	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, 0, 0, 0, 0,\
 		0, 0, 0, 0, 0, 0, 0, 0, \
-	SCREG, 0, 0, 0, 0, 0, 0, 0,		\
+	SCREG|TEMPREG, SCREG|TEMPREG, SCREG|TEMPREG, 0, 0, 0, 0, 0, 0,		\
 		0, 0, 0, 0, 0, 0, 0, 0, \
 	SDREG, SDREG, SDREG, SDREG,
 
@@ -258,11 +259,11 @@ typedef long long OFFSZ;
 
 int COLORMAP(int c, int *r);
 #define	GCLASS(x) (x < 16 ? CLASSA : x < 32 ? CLASSB : x < 48 ? CLASSC : CLASSD)
-#define DECRA(x,y)	(((x) >> (y*5)) & 31)	/* decode encoded regs */
+#define DECRA(x,y)	(((x) >> (y*6)) & 63)	/* decode encoded regs */
 #define	ENCRD(x)	(x)		/* Encode dest reg in n_reg */
-#define ENCRA1(x)	((x) << 5)	/* A1 */
-#define ENCRA2(x)	((x) << 10)	/* A2 */
-#define ENCRA(x,y)	((x) << (5+y*5))	/* encode regs in int */
+#define ENCRA1(x)	((x) << 6)	/* A1 */
+#define ENCRA2(x)	((x) << 12)	/* A2 */
+#define ENCRA(x,y)	((x) << (6+y*6))	/* encode regs in int */
 #define	RETREG(x)	((x) == LONG || (x) == ULONG ? RP01 : \
 	(x) == FLOAT || (x) == DOUBLE ? FR0 : \
 	(x) == LONGLONG || (x) == ULONGLONG ? LL0: R1)
