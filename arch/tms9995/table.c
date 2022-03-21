@@ -168,7 +168,7 @@ struct optab table[] = {
 { SCONV,	INBREG,
 	SAREG,	TINT|TPOINT,
 	SANY,	TLONG|TULONG,
-		NBREG|NBSL,	RESC1,
+		NBREG/*|NBSL*/,	RESC1, /* XXX */
 		"clr	U1\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
 
 /* int to float: nice and easy except for the register swap */
@@ -213,11 +213,12 @@ struct optab table[] = {
 		NAREG|NASL,	RESC1,
 		"swpb	A1\n", },
 
-/* long or unsigned long to int or uintt: no work required */
+/* long or unsigned long to int or uint: no work required */
+/* Although this is a no-op we have to force the type and same register */
 { SCONV,	INAREG,
-	SBREG|SOREG|SNAME,	TLONG|TULONG,
-	SAREG,			TWORD,
-		0,	RLEFT,
+	SBREG,		TLONG|TULONG,
+	SAREG,		TWORD,
+		NAREG|NASL,	RESC1,	/*XX */
 		"", },
 
 /* (u)long -> (u)long, nothing */
@@ -510,8 +511,8 @@ struct optab table[] = {
 { PLUS,		INCREG|FOREFF|FORCC,
 	SCREG,			TFLOAT,
 	SCON|SCREG|SNAME|SOREG,	TFLOAT,
-		0,	RLEFT|RESCC,
-		"ar	AR\n", },
+		0,	RLEFT,
+		"ar	AR ; plus into AL\n", },
 
 { MINUS,		INBREG|FOREFF,
 	SBREG,		TLONG|TULONG,
@@ -659,23 +660,27 @@ struct optab table[] = {
 
 { RS,	INBREG|FOREFF,
 	SBREG,	TLONG,
+	SCON,	TWORD,
+		NSPECIAL,	RLEFT,
+		"bl	@rss32i\n.word	AR\n", },
+
+{ RS,	INBREG|FOREFF,
+	SBREG,	TLONG,
 	SAREG,	TWORD,
 		NSPECIAL,	RLEFT,
 		"bl	@rss32\n", },
 
 { RS,	INBREG|FOREFF,
 	SBREG,	TULONG,
-	SAREG,	TWORD,
+	SCON,	TWORD,
 		NSPECIAL,	RLEFT,
-		"bl	@rsu32\n", },
-
+		"bl	@rsu32i\n.word	AR\n", },
 
 { RS,	INBREG|FOREFF,
 	SBREG,	TULONG,
-	SCON,	TWORD,
+	SAREG,	TWORD,
 		NSPECIAL,	RLEFT,
 		"bl	@rsu32\n", },
-
 
 
 
@@ -822,12 +827,11 @@ struct optab table[] = {
 	SCON	,	TFLOAT,
 		0,	RDEST,
 		"li	ZL,ZR\nli	UL,UR\n", },
-
 { ASSIGN,	FOREFF|INCREG,
 	SCREG,		TFLOAT,
 	SNAME|SOREG,	TFLOAT,
 		0,	RDEST,
-		"lr	AR\n", },
+		"lr	AR ; into AL\n", },
 
 { ASSIGN,	FOREFF|INCREG,
 	SNAME|SOREG,	TFLOAT,
@@ -835,13 +839,18 @@ struct optab table[] = {
 		0,	RDEST,
 		"str	AL\n", },
 
+{ ASSIGN,	FOREFF|INCREG,
+	SCREG,	TFLOAT,
+	SCREG,		TFLOAT,
+		0,	RDEST,
+		"fixme	AR,AL\n", },
+
 /* Struct assigns */
 { STASG,	FOREFF|INAREG,
 	SOREG|SNAME,	TANY,
 	SAREG,		TPTRTO|TANY,
 		NSPECIAL,	RDEST,
 		"ZI", },
-
 /*
  * DIV/MOD/MUL 
  *
@@ -893,12 +902,11 @@ struct optab table[] = {
 		NSPECIAL,	RDEST,
 		"clr	r0\ndiv	AR,r0\n", },
 
-/* FIXME: C rule for divides ordering */
 { DIV,	INBREG,
-	SBREG,			TULONG,
-	SCON,			TULONG,
+	SBREG,			TLONG,
+	SCON,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	div32i\n.word	UR\n.word	AR\n", },
+		"bl	divs32i\n.word	UR\n.word	AR\n", },
 
 { DIV,	INBREG,
 	SBREG,			TLONG|TULONG,
@@ -907,16 +915,16 @@ struct optab table[] = {
 		"bl	@divs32i\n.word	UR\n.word	AR\n", },
 
 { DIV,	INBREG,
-	SBREG,			TULONG,
-	SBREG,			TULONG,
+	SBREG,			TLONG,
+	SBREG,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	div32", },
+		"bl	@divs32\n", },
 
 { DIV,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	@divs32\n", },
+		"bl	@div32\n", },
 
 { DIV,	INCREG,
 	SCREG,			TFLOAT,
@@ -941,28 +949,28 @@ struct optab table[] = {
 
 /* FIXME: C rule for divides ordering */
 { MOD,	INBREG,
-	SBREG,			TULONG,
-	SCON,			TULONG,
+	SBREG,			TLONG,
+	SCON,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	mod32i\n.word	UR\n.word	AR\n", },
+		"bl	@mods32i\n.word	UR\n.word	AR\n", },
 
 { MOD,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	@mods32i\n.word	UR\n.word	AR\n", },
+		"bl	@mod32i\n.word	UR\n.word	AR\n", },
 
 { MOD,	INBREG,
-	SBREG,			TULONG,
-	SBREG,			TULONG,
+	SBREG,			TLONG,
+	SBREG,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	mod32", },
+		"bl	mods32\n", },
 
 { MOD,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	mods32", },
+		"bl	mod32\n", },
 
 /*
  * Indirection operators.
@@ -989,7 +997,7 @@ struct optab table[] = {
 	SANY,	TANY,
 	SOREG|SNAME,	TFLOAT,
 		NCREG,	RESC1,
-		"lr	AL\n", },
+		"lr	AL; umul into A1\n", },
 
 /*
  * Logical/branching operators
@@ -1197,9 +1205,9 @@ struct optab table[] = {
 
 { OPLTYPE,	INCREG,
 	SANY,			TANY,
-	SCREG|SOREG|SNAME,	TFLOAT,
+	SOREG|SNAME,		TFLOAT,
 		NCREG,		RESC1,
-		"lr	AL\n", },
+		"lr	AR ; opltype into A1\n", },
 
 
 /*

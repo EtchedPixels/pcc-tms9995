@@ -282,12 +282,11 @@ nspecial(struct optab *q)
 			/* The shift amount must be in R0 */
 			static struct rspecial s[] = {
 			    {NRIGHT, R0 }, { NOLEFT, R0 }, { 0 } };
-			printf("MOO");
 			return s;
 		}
 		if (q->visit == (INBREG | FOREFF)) {
 			if (q->rshape == SCON)
-				return longfunc1;
+				return longfunconearg;
 			return longintfunc;
 		}
 		break;

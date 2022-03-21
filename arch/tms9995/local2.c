@@ -813,15 +813,21 @@ COLORMAP(int c, int *r)
 		return 1;
 	case CLASSC:
 		/* FIXME */
-		return r[CLASSC] < 3;
+		return r[CLASSC] < 1;
 	}
 	return 0;
 }
 
 char *rnames[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
 	"r01", "r12", "r23", "r34", "XXX", "XXX", "XXX", "XXX",
+	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
 	"fr0", "fr1", "fr2", "XXX", "XXX", "XXX", "XXX", "XXX",
+	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX"
+};
+ 
+ /*
 };
 
 /*
