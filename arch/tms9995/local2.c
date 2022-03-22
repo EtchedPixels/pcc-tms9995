@@ -77,13 +77,30 @@ static const char *rname[] = {
 static const char *fr_name[] = {
 	"fr0",
 	"@fr1",
-	"@fr2"
+	"@fr2",
+	"@fr3"
+};
+
+static const char *fr_name_l[] = {
+	"fr0",
+	"@fr1+2",
+	"@fr2+2",
+	"@fr3+2"
 };
 
 static const char *fr_name_pic[] = {
+	"xxxfr0",
+	"@fr1(r15)",
+	"@fr2(r15)",
+	"@fr3(r15)",
+	"XXX"
+};
+
+static const char *fr_name_pic_l[] = {
 	"  xxxfr0",
-	"2+@fr1(r15)",
-	"2+@fr2(r15)",
+	"@fr1+2(r15)",
+	"@fr2+2(r15)",
+	"@fr3+2(r15)",
 	"XXX"
 };
 
@@ -122,7 +139,7 @@ static const char *regname_l(int n)
 	case CLASSC:
 		/* fr0 is an alias of r0/r1 */
 		if (r)
-			return 2 + (kflag ? fr_name_pic[r]: fr_name[r]);
+			return 2 + (kflag ? fr_name_pic_l[r]: fr_name_l[r]);
 		return "r1";
 	default:
 		return "XXX";
@@ -356,6 +373,7 @@ twolcomp(NODE *p)
 static void fpmove_r(int s, int d)
 {
 	char *or = kflag ? "(r15)" : "";
+	printf(";fpmove %s, %s\n", regname(s), regname(d));
 	if (s == d) {
 		return;
 	}
@@ -987,18 +1005,31 @@ myoptim(struct interpass *ip)
 int
 COLORMAP(int c, int *r)
 {
+	int ca = r[CLASSA];
+	int cb = r[CLASSB];
+	int cc = r[CLASSC];
+
 	switch (c) {
 	case CLASSA:
-		return (r[CLASSC] * 2 + r[CLASSB] * 2 + r[CLASSA]) < 6;
+		/* Each class B register can cost us two class A */
+		ca += 2 * cb;
+		/* Class C can cost us two class A max */
+		if (cc)
+			ca += 2;
+		return  ca < 10;	/* We have 10 class A */
 	case CLASSB:
-		if (r[CLASSB] + r[CLASSC] > 1) return 0;
-		if (r[CLASSB] == 1 && r[CLASSA] > 0) return 0;
-		if (r[CLASSC] == 1 && r[CLASSA] > 0) return 0;
-		if (r[CLASSA] > 2) return 0;
-		return 1;
+		/* Each class A can take out two class B (high and low) */
+		cb += 2 * ca;
+		/* Class C can take out another 1 (we have no R15,0) */
+		if (cc)
+			cb ++;
+		return cb < 10;	/* We have 10 */
 	case CLASSC:
-		/* FIXME */
-		return r[CLASSC] < 1;
+		/* We can lose one class C register if any A or B are
+		   allocated */
+		if (ca || cb)
+			cc++;
+		return cc < 4;
 	}
 	return 0;
 }
@@ -1006,8 +1037,8 @@ COLORMAP(int c, int *r)
 char *rnames[] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
-	"r01", "r12", "r23", "r34", "XXX", "XXX", "XXX", "XXX",
-	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
+	"rp01", "rp12", "rp23", "rp34", "rp45", "rp56", "rp67", "rp78",
+	"rp89", "rp910", "rp1011", "rp1112", "rp1213", "rp1314", "rp1415", "rp150",
 	"fr0", "fr1", "fr2", "XXX", "XXX", "XXX", "XXX", "XXX",
 	"XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX", "XXX",
 	"ll0", "ll1", "ll2", "ll3"

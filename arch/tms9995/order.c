@@ -210,6 +210,10 @@ static struct rspecial convlongfunc[] = {
 	{NLEFT,  R0}, {NRES, RP01}, { 0 }
 };
 
+static struct rspecial  floatops[] = {
+	{ NLEFT, FR0 }, {NEVER, FR0}, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, }
+};
+
 
 struct rspecial *
 nspecial(struct optab *q)
@@ -227,9 +231,7 @@ nspecial(struct optab *q)
 				return longfunconearg;
 			return longfunc;
 		} else if (q->visit == INCREG) {
-			static struct rspecial  s[] = {
-			    { NLEFT, FR0 }, {NEVER, FR0}, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, } };
-			return s;
+			return floatops;
 		}
 		break;
 
@@ -244,9 +246,7 @@ nspecial(struct optab *q)
 				return longfunconearg;
 			return longfunc;
                 } else if (q->visit == INCREG) {
-			static struct rspecial  s[] = {
-			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, } };
-			return s;
+			return floatops;
 		}
 		break;
 
@@ -269,11 +269,8 @@ nspecial(struct optab *q)
 			return longfunconearg;
 		if (q->visit == (INBREG|FOREFF))
 			return longfunc;
-		if (q->visit == (INCREG|FOREFF|FORCC)) {
-			static struct rspecial  s[] = {
-			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NEVER, FR0 }, { NRES, FR0 }, { 0, } };
-			return s;
-		}
+		if (q->visit == (INCREG|FOREFF|FORCC))
+			return floatops;
 		break;
 	case UMINUS:
 		if (q->visit == (INBREG|FOREFF))

@@ -321,14 +321,14 @@ struct optab table[] = {
 { CALL,		INCREG,
 	SNAME|SCON|SOREG,	TANY,
 	SCREG,	TFLOAT,
-		NCREG,	RESC1,
-		"bl	AL\nZC", },
+		NCREG|NCSL,	RESC1,
+		"fbl	AL\nZC", },
 
 { UCALL,	INCREG,
 	SNAME|SCON|SOREG,	TANY,
 	SCREG,	TFLOAT,
-		NCREG,	RESC1,
-		"bl	AL\nZC", },
+		NCREG|NCSL,	RESC1,
+		"fbl	AL\nZC", },
 
 { CALL,		INCREG,
 	SAREG,	TANY,
@@ -509,7 +509,7 @@ struct optab table[] = {
 { PLUS,		INCREG|FOREFF|FORCC,
 	SCREG,			TFLOAT,
 	SCREG|SNAME|SOREG,	TFLOAT,
-		NSPECIAL,	RLEFT,
+		NSPECIAL,	RDEST,
 		"ar	AR ; plus into AL\n", },
 
 { MINUS,		INBREG|FOREFF,
@@ -575,8 +575,8 @@ struct optab table[] = {
 { MINUS,	INCREG|FOREFF|FORCC,
 	SCREG,			TFLOAT,
 	SCREG|SNAME|SOREG,	TFLOAT,
-		NSPECIAL,	RLEFT|RESCC,
-		"sr	AR\n", },
+		NSPECIAL,	RDEST|RESCC,
+		"sr	AR; subtract from AL\n", },
 
 /*
  * The next rules handle all shift operators.
@@ -824,7 +824,7 @@ struct optab table[] = {
 	SCREG|SNAME|SOREG,	TFLOAT,
 	SCREG|SNAME|SOREG,	TFLOAT,
 	0,	RDEST,
-		"ZH", },
+		"; mov AR,AL\nZH", },
 
 /* Struct assigns */
 { STASG,	FOREFF|INAREG,
@@ -865,7 +865,7 @@ struct optab table[] = {
 	SCREG,			TFLOAT,
 	SCREG|OREG|SNAME,	TFLOAT,
 		NSPECIAL,	RDEST,
-		"mr	AR\n", },
+		"mr	AR; AL *= AR\n", },
 
 /* signed divide r0/r1 by operand into r0/r1 (r1 = remainder) */
 
@@ -910,8 +910,8 @@ struct optab table[] = {
 { DIV,	INCREG,
 	SCREG,			TFLOAT,
 	SCREG|SNAME|SOREG,		TFLOAT,
-		NSPECIAL,	RLEFT,
-		"dr	AR\n", },
+		NSPECIAL,	RDEST,
+		"dr	AR; AL /= AR\n", },
 
 /* signed divide r0/r1 by operand into r0/r1 (r1 = remainder) */
 
@@ -980,7 +980,7 @@ struct optab table[] = {
  	SANY,	TPOINT | TWORD,
  	SOREG|SNAME,	TFLOAT,
  		NCREG|NCSL,	RESC1,		/* ?? NCSL */
-		"mov	ZL,Z1\nmov	UL,U1; umul into A1\n", },
+		"mov	ZL,Z1\nmov	UL,U1; umul AL into A1\n", },
 
 /*
  * Logical/branching operators
@@ -1009,6 +1009,7 @@ struct optab table[] = {
 		0, 	RESCC,
 		"ci	AL,AR\n", },
 
+#if 0
 /* FIXME: need to tell it that this destroys right hand and hope that's
    still usable, or need helper - which ? */
 { OPLOG,	FORCC,
@@ -1016,6 +1017,7 @@ struct optab table[] = {
 	SCREG,		TFLOAT,
 		0, 	RESCC,
 		"sr	AL\n", },
+#endif
 
 { OPLOG,	FORCC,
 	SAREG|SCON,	TCHAR|TUCHAR,
@@ -1186,12 +1188,11 @@ struct optab table[] = {
 		NAREG,		RESC1,
 		"movb	AL,A1\n", },
 
-/* FIXME: needs a set of rules for fp0 v fpn */
 { OPLTYPE,	INCREG,
 	SANY,			TANY,
 	SCREG|SOREG|SNAME,	TFLOAT,
 		NCREG,		RESC1,
-		"ZM", },
+		"; opltype AL into A1\nZM", },
 
 /*
  * Negate a word.
@@ -1212,7 +1213,7 @@ struct optab table[] = {
 	SCREG,	TFLOAT,
 	SANY,	TANY,
 		NSPECIAL,	RLEFT,
-		"negr\n", },
+		"negr ; fp negate AL\n", },
 
 
 { COMPL,	INBREG,
