@@ -118,15 +118,15 @@ struct optab table[] = {
 { SCONV,	INBREG,
 	SAREG,	TCHAR,
 	SANY,	TULONG|TLONG,
-		NBREG|NBSL,	RESC1,
-		"clr	U1\nsra	A1,8\nci	A1,0\nZBjge	ZE\ndec	A1\nZD", },
+		NBREG,	RESC1,
+		"mov	AL,Z1clr	U1\nsra	Z1,8\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
 
 /* Unsigned char to unsigned long: register */
 { SCONV,	INBREG,
 	SAREG,	TUCHAR,
 	SANY,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"lsr	A1,8\nclr	U1\n", },
+		"mov	AL,Z1\nlsr	Z1,8\nclr	U1\n", },
 
 /* Unsigned char to float/double */
 /* Constant is forced into R0, masked and converted */
@@ -168,8 +168,8 @@ struct optab table[] = {
 { SCONV,	INBREG,
 	SAREG,	TINT|TPOINT,
 	SANY,	TLONG|TULONG,
-		NBREG/*|NBSL*/,	RESC1, /* XXX */
-		"clr	U1\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
+		NBREG,	RESC1,
+		"mov	A1,Z1\nclr	U1\nci	Z1,0\nZBjge	ZE\ndec	U1\nZD", },
 
 /* int to float: nice and easy except for the register swap */
 { SCONV,	INCREG,
@@ -185,19 +185,20 @@ struct optab table[] = {
 		NSPECIAL|NCREG,	RESC1,
 		"cir	AL\n", },
 
-/* unsigned in to long or ulong: just clear the upper */
+/* The compiler isn't too smart at folding matching registers into pairs */
+/* unsigned int to long or ulong: just clear the upper */
 { SCONV,	INBREG,
 	SAREG,	TUNSIGNED,
 	SANY,	TLONG|TULONG,
-		NBREG|NBSL,	RESC1,
-		"clr	U1\n", },
+		NBREG,	RESC1,
+		"mov	AL,Z1\nclr	U1; sconvu16u32 AL,A1\n", },
 
 /* unsigned int to long or ulong: generic move and conversion for unsigned to long/ulong */
 { SCONV,	INBREG,
 	SOREG|SNAME,	TUNSIGNED,
 	SANY,	TLONG|TULONG,
-		NBREG|NBSL,	RESC1,
-		"clr	U1\n", },
+		NBREG,	RESC1,
+		"mov	AL,Z1\nclr	U1\n", },
 
 /* unsigned int to float : we don't have a 16bit op for it. use the 32bit one */
 { SCONV,	INCREG,
@@ -210,16 +211,16 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 	SAREG,			TCHAR|TUCHAR,
-		NAREG|NASL,	RESC1,
-		"swpb	A1\n", },
+		NAREG,		RESC1,
+		"mov	ZL,A1; SCONV breg areg AL, A1\nswpb	A1\n", },
 
 /* long or unsigned long to int or uint: no work required */
-/* Although this is a no-op we have to force the type and same register */
+/* Alas the compiler isn't quite smart enough for this to happen in situ */
 { SCONV,	INAREG,
 	SBREG,		TLONG|TULONG,
 	SAREG,		TWORD,
 		NAREG|NASL,	RESC1,	/*XX */
-		"", },
+		"mov	ZL,A1; sconv breg areg AL, A1\n", },
 
 /* (u)long -> (u)long, nothing */
 { SCONV,	INBREG,
@@ -228,10 +229,7 @@ struct optab table[] = {
 		NBREG|NBSL,	RESC1,
 		"", },
 
-/*
- *	FIXME: the BREG case does not work for these CONV float ops as
- *	we need to flip the register pair
- */
+/* FIXME; need to swap pair */
 /* long -> float/double */
 { SCONV,	INCREG,
 	SNAME|SOREG,	TLONG,
@@ -523,14 +521,14 @@ struct optab table[] = {
 { MINUS,		INBREG|FOREFF,
 	SBREG,		TLONG|TULONG,
 	SCON,		TLONG|TULONG,
-		NSPECIAL,	RLEFT,
+		NSPECIAL,	RDEST,
 		/* Words reversed for speed */
 		"bl	@sub32i\n.word	AR\n.word	UR\n", },
 
 { MINUS,		INBREG|FOREFF,
 	SBREG,		TLONG|TULONG,
 	SBREG,		TLONG|TULONG,
-		NSPECIAL,	RLEFT,
+		NSPECIAL,	RDEST,
 		"bl	@sub32\n", },
 
 /* Sub one from anything left */
@@ -866,7 +864,7 @@ struct optab table[] = {
 { MUL,	INCREG,
 	SCREG,			TFLOAT,
 	SCREG|OREG|SNAME,	TFLOAT,
-		NSPECIAL,	RLEFT,
+		NSPECIAL,	RDEST,
 		"mr	AR\n", },
 
 /* signed divide r0/r1 by operand into r0/r1 (r1 = remainder) */
@@ -906,7 +904,7 @@ struct optab table[] = {
 { DIV,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
-		NSPECIAL,		RLEFT,
+		NSPECIAL,		RDEST,
 		"bl	@div32\n", },
 
 { DIV,	INCREG,

@@ -191,7 +191,7 @@ setuni(NODE *p, int cookie)
    so we can generate nice tight helpers. Favour RP01 for now */
 
 static struct rspecial longfunc[] = {
-	{NLEFT,  RP01}, {NRIGHT, RP23}, {NRES, RP01}, { 0 }
+	{NLEFT,  RP01}, {NRIGHT, RP23}, {NEVER, RP01}, {NRES, RP01}, { 0 }
 };
 
 static struct rspecial longfunconearg[] = {
