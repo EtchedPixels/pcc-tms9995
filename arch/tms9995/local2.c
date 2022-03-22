@@ -1105,6 +1105,8 @@ special(NODE *p, int shape)
 		break;
 	case SMTWO:
 		if (o == ICON && p->n_name[0] == 0 && getlval(p) == -2)
+			return SRDIR;
+		break;
 	case SINCB: /* Check if subject for post-inc */
 		if (p->n_op == ASSIGN && p->n_right->n_op == PLUS &&
 		    treecmp(p->n_left, p->n_right->n_left) &&
