@@ -190,7 +190,7 @@ struct optab table[] = {
 	SAREG,	TUNSIGNED,
 	SANY,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"clr	UL\n", },
+		"clr	U1\n", },
 
 /* unsigned int to long or ulong: generic move and conversion for unsigned to long/ulong */
 { SCONV,	INBREG,
@@ -294,7 +294,7 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"zbl	*AL\nZC", },
+		"bl	*AL\nZC", },
 
 { CALL,		INBREG,
 	SNAME|SCON|SOREG,	TANY,
@@ -330,7 +330,7 @@ struct optab table[] = {
 	SNAME|SCON|SOREG,	TANY,
 	SCREG,	TFLOAT,
 		NCREG,	RESC1,
-		"bl	ALZC\n", },
+		"bl	AL\nZC", },
 
 { CALL,		INCREG,
 	SAREG,	TANY,
@@ -746,7 +746,7 @@ struct optab table[] = {
 	SNAME|SOREG,	TLONG|TULONG,
 	SCON,		TLONG|TULONG,
 		0,	0,
-		"li	ZR,ZL\nli	UR,UL\n", },
+		"ZN", },
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLONG|TULONG,
@@ -976,12 +976,13 @@ struct optab table[] = {
 		NAREG|NASL,	RESC1,
 		"movb	AL,A1\n", },
 
-/* FIXME: needs to be special or use mov for 1/2 case */
-{ UMUL,	INCREG,
-	SANY,	TPOINT | TWORD,
-	SOREG|SNAME,	TFLOAT,
-		NCREG|NCSL,	RESC1,		/* ?? NCSL */
-		"lr	AL; umul into A1\n", },
+/* Use a pair of moves. For FR0 we could use LR but it's likely to be
+   emulated anyway */
+ { UMUL,	INCREG,
+ 	SANY,	TPOINT | TWORD,
+ 	SOREG|SNAME,	TFLOAT,
+ 		NCREG|NCSL,	RESC1,		/* ?? NCSL */
+		"mov	ZL,Z1\nmov	UL,U1; umul into A1\n", },
 
 /*
  * Logical/branching operators
@@ -1149,13 +1150,19 @@ struct optab table[] = {
 	SANY,	TANY,
 	SCON,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"li	ZL,Z1\nli	UL,U1\n", },
+		"ZO", },
 
 { OPLTYPE,	INBREG,
 	SANY,	TANY,
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 		NBREG,	RESC1,
 		"mov	ZL,Z1\nmov	UL,U1\n", },
+
+{ OPLTYPE,	INAREG,
+	SANY,	TANY,
+	SCON,		TWORD|TPOINT|TCHAR|TUCHAR,
+		NAREG,	RESC1,
+		"clr	AL\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
