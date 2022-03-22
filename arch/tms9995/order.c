@@ -27,7 +27,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 # include "pass2.h"
 
 #include <string.h>
@@ -44,23 +43,6 @@ notoff(TWORD t, int r, CONSZ off, char *cp)
 	if (r == 0 && off)
 		return 1;
 	return(0);  /* YES */
-}
-
-/* FIXME: does not appear functional */  
-static int
-inctree(NODE *p)
-{
-	if (p->n_op == MINUS && p->n_left->n_op == ASSIGN && 
-	    p->n_left->n_right->n_op == PLUS &&
-	    treecmp(p->n_left->n_left, p->n_left->n_right->n_left) &&
-	    p->n_right->n_op == ICON && getlval(p->n_right) == 1 &&
-	    p->n_left->n_right->n_right->n_op == ICON &&
-	    getlval(p->n_left->n_right->n_right) == 1) {
-		/* post-increment by 1; (r0)+ */
-		if (isreg(p->n_left->n_left)) /* Ignore if index not in reg */
-			return 1;
-	}
-	return 0;
 }
 
 /*
@@ -80,20 +62,6 @@ offstar(NODE *p, int shape)
 		if (p->n_type < PTR+LONG || p->n_type > PTR+ULONGLONG)
 			p = p->n_left; /* double indexed umul */
 	}
-	if (inctree(p)) /* Do post-inc conversion */
-		return;
-#if 0
-	/* This breaks for some reason I don't yet understand and leaves us
-	   with an unresolved UMUL in the table processing */
-	if( p->n_op == PLUS || p->n_op == MINUS ){
-		if (p->n_right->n_op == ICON) {
-			if (isreg(p->n_left) == 0)
-				(void)geninsn(p->n_left, INAREG);
-			/* Converted in ormake() */
-			return;
-		}
-	}
-#endif
 	(void)geninsn(p, INAREG);
 }
 
@@ -103,37 +71,6 @@ offstar(NODE *p, int shape)
 void
 myormake(NODE *p)
 {
-	NODE *q = p->n_left;
-
-	if (x2debug) {
-		printf("myormake(%p)\n", p);
-		fwalk(p, e2print, 0);
-	}
-	if (inctree(q)) {
-		if (q->n_left->n_left->n_op == TEMP)
-			return;
-		p->n_op = OREG;
-		setlval(p, 0); /* Add support for index offset */
-		p->n_rval = R2PACK(regno(q->n_left->n_left), 0, 1);
-		tfree(q);
-		return;
-	}
-	if (q->n_op != OREG)
-		return;
-	if (TBLIDX(q->n_su))
-		return; /* got sub-conversion, cannot convert */
-	if (R2TEST(regno(q)))
-		return; /* cannot convert anymore */
-	if (p->n_type >= LONG && p->n_type <= ULONGLONG)
-		return;
-	p->n_op = OREG;
-	setlval(p, getlval(q));
-	p->n_rval = R2PACK(q->n_rval, 0, 0);
-	if (x2debug) {
-		printf("myormake end(%p)\n", p);
-		fwalk(p, e2print, 0);
-	}
-	nfree(q);
 }
 
 /*
