@@ -20,17 +20,58 @@ The code generator understands both two and three register instruction
 models and knows how to try and optimize for two register machines (that is
 where one of the inputs is the output).
 
-### Registers
+### Classes and Registers
 
-The compiler has a notion of registers. This is not the same as physical
-processor registers although it usually aligns. In theory nothing stops some
-registers in the model being things like memory locations.
+This is the heart of the automatic register assignment. The compiler handles
+all register allocation using provided rules and tables. All the allocation,
+movement and spilling of registers is handled for you.
 
-There are one or more classes of register. The classes are defined primarily by the
-types they can usefully hold. Registers in one class may overlap registers
-in another class (so for example if register 0 and 1 are also floating
-point register 0 this is fine). The same model is used for processors
-working with types larger than a physical register.
+The compiler assigns things based upon a class. Each base C type in the
+system (plus pointer) is mmapped to a class using a rule provided when
+targetting the compiler. A given type must map to a specific class, but many
+types can map to one class.
+
+For example a processor with eight 32bit registers might well have only a
+single class for char, short, integer, pointer, float and maybe even long
+types. The different types that live within a class do not need to have the
+same bit representation. Conversions are generated between the types and
+can do any needed masking or sign extension if necessary. In many cases (for
+example a processor with 32bit register operations plus byte and word sized
+load/store memory) they may all be blank.
+
+The compiler also distinguishes between pointers and, although rare except
+on old machines, can cope with things like special character pointers.
+
+There are two usual reasons to put something into a different class. The first
+is for types that have physically separate registers. For example some
+processors have entirely separate floating point registers and operators.
+The second is when you need to combine registers for larger types. Thus our
+simple 32bit processor might use pairs of registers for 64bit types and have
+a second class of virtual registers made of pairs of the 32bit class.
+
+The compiler is quite weak at this, and does not have a way to express a
+class as "any two members of another" nor to express in-situ conversions
+where for example a register pair is turned from 64 to 32bit by simple
+aliasing one of the registers. Instead explicit pairs must be described.
+That may be arbitrary pairs, or reflect any instruction set rules such as
+hardware 64bit operations using even register pairs.
+
+Registers need not be allocated to a specific class. The machine description
+also specifies which registers in a given class clash with those in another.
+Thus register r0 could be a 32bit register in CLASSA, and half of a register
+in a 64bit CLASSB. The compiler will use the overlap table when generating
+register assignments.
+
+Instruction asymmetries are normally best handled outside of classes. The
+rule tables described later allow the description of input and output rules
+for a given instruction. Thus if a specific register is needed as a shift
+counter this can be expressed in a rule. Similarly it is possible to specify
+the range of register + offset allowed for a pointer dereference based
+entirely upon the register and type.
+
+It is possible for some registers to be memory locations if this is handled
+by the rules correctly. For some architectures this may be necessary if
+there are not enough real registers.
 
 ### Stack
 
@@ -53,7 +94,8 @@ for that type.
 ### Definitions
 
 makecc is a helper to turn multi-byte characters into a single word. This
-doesn't normally need touching.
+doesn't normally need touching unless you have a word based machine or
+strange character bit lengths.
 
 ARGINIT is the number of *bits* above the frame pointer where the arguments
 start. A typical platform has to push the return address and the old frame
@@ -123,13 +165,12 @@ or as a call to something if it is.
 
 szty(t) returns the size of t in target machine characters.
 
-### Registers
+### Registers And Classes
 
-Registers are divided into classes. The register and class are encoded as
-a small integer according to the number of registers in the largest class.
-
-Thus a machine with a largest group of 8 registers will put the register
-number in the low 3 bits and the class in the bits above.
+The register and class are encoded as a small integer according to the
+number of registers in the largest class. Thus a machine with a largest group
+of 8 registers will put the register number in the low 3 bits and the class in
+the bits above.
 
 The actual register naming doesn't matter, but these values will be used
 over the various pieces of arch code so pick wisely. Most targets name them
@@ -302,15 +343,16 @@ one set of rules to be written for a group of similar operations.
 
 ### PCONV
 
-These are conversions between pointer and non pointer typees. In many cases
-these are no-operations but they can do work when for example addresses need
-to be shifted when converting or if index and computation registers differ.
+These are conversions for pointer ypes. In most cases these are no-operations
+but they can do work when for example addresses need to be shifted.
 
 ### SCONV
 
 Shape conversions. These move things between different types and class. When
 an object is moved between classes the rule must include an NxREG, RESC1
-pair or the compiler will get its types in a knot and confused.
+pair or the compiler will get its types in a knot and confused. It is not
+possible to relialy move an object in situ between two classes using an
+overlapping register.
 
 ### CALL/UCALL
 
@@ -550,25 +592,86 @@ structure.
 ### Binary Nodes
 
 #### AND
+
+The C binary and operator applied to left and right.
+
 #### ASSIGN
+
+An assignment of right to the object on the left.
+
 #### DIV
+
+The left side divided by the right hand side.
+
 #### EQ
+
+An equality comparison.
+
 #### ER
+
+The C binary xor operator applied to left and right.
+
 #### GE
+
+A signed greater-equal comparison.
+
 #### GT
+
+A signed greater-than comparison.
+
 #### LE
+
+A signed less-than comparison.
+
 #### LS
+
+A left of sift of the left hand side by the right.
+
 #### LT
+
+A signed less-than comparison.
+
 #### MINUS
+
+The subtraction of right from left.
+
 #### MOD
+
+The remainder of left divided by right. Not the modulus. This is the C '%'
+operator.
+
 #### NE
+
+A not equals comparison of left and right.
+
 #### PLUS
+
+The addition of left and right.
+
 #### OR
+
+The C binary or operator applied to left and right.
+
 #### RS
+
+A right shift of the left side by the right.
+
 #### UGE
+
+An unsigned greater-equal comparison.
+
 #### UGT
+
+An unsigned greater-than comparison.
+
 #### ULE
+
+An unsigned less-equal comparison.
+
 #### ULT
+
+An unsigned less-than comparison.
+
 
 ### TODO
 #### CBRANCH
@@ -603,7 +706,10 @@ allows the target to manipulate the compile tree to make changes it wishes.
 ````
 void myormake(NODE *(p)
 ````
-Convert any offstar found OREGs into real OREGs
+During canonicalisation of the tree ay UMUL left after the generic rules
+attempt to convert it into an OREG are passed to myormake so that it can
+look for further opportunities to convert it. This occurs before mycanon()
+is invoked.
 
 
 ````
@@ -665,7 +771,8 @@ indicates the left hand side must not be the named register.
 
 NRIGHT and NORIGHT do the same thing for the right hand side
 
-NRES indicates the named register will be the result.
+NRES indicates the named register will be the result. This should be used
+with RDEST in the rule.
 
 NEVER indicates a register that will be clobbered internally by this
 operation.
@@ -918,12 +1025,15 @@ assignments and multi-word register moves
 ````
 int rewfld(NODE *p)
 ````
-TODO
+return 1. Not used on any current target.
+
 
 ````
 int flshape(NODE *p)
 ````
-TODO
+Given a field in p returns the necessary action to access it. This can be
+one of SRDIR (direct match), SROREG (place in an OREG), SRREG (place in a
+register) or SRNOPE (not possible).
 
 ````
 int shtemp(NODE *p)
@@ -945,7 +1055,8 @@ Output the given constant node to the assembly output
 ````
 void insput(NODE *p)
 ````
-TODO
+Called when an Ix (IL IR etc) pattern is found in the table entry being
+expanded. Not used by an current target.
 
 ````
 void upput(NODE *p, int size)
@@ -978,7 +1089,14 @@ TODO
 ````
 void mycanon(NODE *p)
 ````
-TODO
+After the tree is built the compiler turns it into a canonical form.
+Internally it rearranges arthimetic to put pointers on the left hand
+side of additions to pointers and it tries to turn dereferences into
+an OREG - replacing various constant patterns that can be turned from
+an expression into an OREG (constant offset of register) without
+creating temporary values. It then calls mycanon with the parse tree to
+allow any architecture specific tree changes to suit the target machine.
+
 
 ````
 void myoptim(struct interpass *ip)
@@ -991,6 +1109,11 @@ int COLORMAP(int c, int *r)
 Given the list of registers by class in the array r return true if the
 allocation is trivially possible.
 
+This function is used to evaluate which register assignment combinations
+will work without running out of registers. If it is not correct then the
+compiler can generate some very very strange and broken register
+assignments without actually erroring.
+
 ````
 int gclass(TWORD t)
 ````
@@ -998,7 +1121,9 @@ Convert a type into the required class.
 
 void lastcall(NODE *p)
 ````
-TODO
+This is invoked on function call nodes just before the function call is
+generated. Some platform use this to calculate things like the size of the
+argument block being passed.
 
 ````
 int special(NODE *p, int shape)
