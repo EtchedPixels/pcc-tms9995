@@ -270,7 +270,6 @@ nspecial(struct optab *q)
 		if (q->visit == (INBREG|FOREFF))
 			return longfunc;
 		if (q->visit == (INCREG|FOREFF|FORCC)) {
-			printf("PLUS FR0, !FR0, to FR0\n");
 			static struct rspecial  s[] = {
 			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NEVER, FR0 }, { NRES, FR0 }, { 0, } };
 			return s;

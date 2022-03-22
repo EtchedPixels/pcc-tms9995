@@ -826,7 +826,7 @@ struct optab table[] = {
 	SCREG|SNAME|SOREG,	TFLOAT,
 	SCREG|SNAME|SOREG,	TFLOAT,
 	0,	RDEST,
-		"xxZH", },
+		"ZH", },
 
 /* Struct assigns */
 { STASG,	FOREFF|INAREG,
@@ -1186,7 +1186,7 @@ struct optab table[] = {
 	SANY,			TANY,
 	SCREG|SOREG|SNAME,	TFLOAT,
 		NCREG,		RESC1,
-		"fixme	AL ; opltype into A1\n", },
+		"ZM", },
 
 /*
  * Negate a word.
