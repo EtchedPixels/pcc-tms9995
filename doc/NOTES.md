@@ -318,7 +318,9 @@ Function calls. There is one entry for each return type (left side) both for
 constant and pointer calls (indirect function calls), and one on the right
 for the type of the return.
 
-TODO explain UCALL v CALL v STCALL v USTCALL
+UCALL matches functions that take no arguments. CALL functions that do take
+arguments. USTCALL is used for functions that return large objects
+(structures or unions).
 
 ### PLUS
 
@@ -423,13 +425,169 @@ which are handeld by STARG
 
 Pass a struct argument (not pointer to struct)
 
+## Tree Processing
+
+A lot of the functions within the compiler allow the manipulation of the
+parse tree that was created in the first pass. The parse tree consists
+of objects of type NODE. These are chained by left and right pointers to
+form a tree with value as the leaf nodes.
+
+The current node is passed into many of the machine specific functions
+to allow the inspection and sometimes rewriting of nodes. For example the
+PDP-11 port rewrites some logic operations to reflect the processors use of
+set and clear corresponding bits. Rewrites vary in complexity. A small
+number of rewrites are required by the target, particularly to rewrite
+arguments, statics and globals and if necessary adjust them for PIC support.
+
+Although it is less obvious the same NODE tree is what drives the rule based
+tables and the rules test parts of the node.
+
+The leaf nodes used by the compiler (and thus in effect the primitive
+classes of object it works with) are
+
+### Leaf Nodes
+
+#### FCON
+
+This works the same way as an ICON with the floating point value in n_dcon.
+
+#### ICON
+
+An integer constant of arbitrary size (up to the CONSZ size). A constant
+may also be a memory reference (ie a literal). In that case n_name is the
+name.
+
+#### NAME
+
+A symbol name, possibly with an offset. The n_lval field holds the offset if
+any. By the time the code generator is called n_name is the symbol name.
+
+#### OREG
+
+An object whose address is found by adding an offset to a register. The
+register is held in n_rval and the offset in n_lval.  An OREG need not be an
+object that can be directly generated in one instruction. If the compiler
+discovers that the reference cannot be taken that way it will rewrite the
+reference in the tree to create a temporary holding the calculated
+reference.
+
+#### REG
+
+A register. The encoded register number including the class is held in
+n_rval.
+
+
+
+### Unary Nodes
+
+These hold objects that have a single subtree. They are used both to
+represent C functionality with this property and for some internal
+properties.
+
+#### ADDROF
+
+The address of the child object. The C '&' operator.
+
+#### COMPL
+
+The complement of the left hand node. Used for the C ~ operator
+
+#### FLD
+
+A field for bitfield operations. n_rval holds the bit offsets packed
+together. The left leg is the bit field reference.
+
+#### FORCE
+
+A special operation used to get the return value of a function into the
+return register.
+
+#### FUNARG
+
+A function argument.
+
+#### GOTO
+
+Used to generate branches to the left child node.
+
+#### PCONV
+
+A type conversion whose result is a pointer of some form. PCONV is unusual
+in that the type of the NODE and the child NODE may differ.
+
+#### PMCONV
+
+Used in pass1.
+
+#### PVCONV
+
+Used in pass1.
+
+#### SCONV
+
+A type conversion to an integer or floating point type. SCONV is unusual
+in that the type of the NODE and the child NODE may differ.
+
+#### UCALL
+
+A function call to a function that has no arguments. Functions that have
+arguments use the binary node CALL. Functions returning a struct use
+USTCALL or STCALL instead.
+
+#### UMINUS
+
+The C unary minus operator (negation)
+
+#### UMUL
+
+A type indirection (the C * operator)
+
+#### USTCALL
+
+A function call to a function with no arguments, but which returns a
+structure.
+
+### Binary Nodes
+
+#### AND
+#### ASSIGN
+#### DIV
+#### EQ
+#### ER
+#### GE
+#### GT
+#### LE
+#### LS
+#### LT
+#### MINUS
+#### MOD
+#### NE
+#### PLUS
+#### OR
+#### RS
+#### UGE
+#### UGT
+#### ULE
+#### ULT
+
+### TODO
+#### CBRANCH
+#### CM
+#### CCODES
+#### XARG
+#### XASM
+#### STASG
+#### STARG
+#### RETURN
+
+
 ## Functions Provided By The Target Code
 
 ````
 int notoff(TWORD T, int r, CONSZ off, char *cp)
 ````
 This function looks at the type, register, offset and decides whether it is
-valid to constructr an OREG (register offset) to describe it. This allows
+valid to construct an OREG (register offset) to describe it. This allows
 for processors with varying range limits, register limits etc to decide
 which if any indexes are valid. When the compiler finds such an OREG is not
 valid it will pick another solution, possibly involving moving the value to
