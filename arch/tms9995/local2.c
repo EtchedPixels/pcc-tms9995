@@ -35,19 +35,23 @@ static int spcoff;
 static int argsiz(NODE *p);
 static void negcon(FILE *fp, int con);
 
-static int classbmap[] = {
-	1, 2, 3, 4, -1, -1, -1, -1
-};
-
 static const char *rpname[]  = {
 	"rp01",
 	"rp12",
 	"rp23",
 	"rp34",
-	"XXX",
-	"XXX",
-	"XXX",
-	"XXX"
+	"rp45",
+	"rp56",
+	"rp67",
+	"rp78",
+	"rp89",
+	"rp910",
+	"rp1011",
+	"rp1112",
+	"rp1213",
+	"rp1314",
+	"rp1415",
+	"rp150"
 };
 
 static const char *rname[] = {
@@ -66,7 +70,8 @@ static const char *rname[] = {
 	"r12",
 	"r13",
 	"r14",
-	"r15"
+	"r15",
+	"xxx"
 };
 
 static const char *fr_name[] = {
@@ -112,7 +117,6 @@ static const char *regname_l(int n)
 	int r = REGBITS(n);
 	switch(GCLASS(n)) {
 	case CLASSB:
-		r = classbmap[r] - 1;
 	case CLASSA:
 		return rname[r];
 	case CLASSC:
@@ -130,10 +134,12 @@ static const char *regname_h(int n)
 {
 	int r = REGBITS(n);
 	switch(GCLASS(n)) {
-	/* Not valid for class A - there is no high half */
+	/* Not valid for class A - there is no high half but we sometimes
+	   generate them when doing SCONVs and want it to mean the same b reg */
+	case CLASSA:
+		return rname[r + 1];
 	case CLASSB:
-		r = classbmap[r];
-		return rname[r];
+		return rname[r + 1];
 	case CLASSC:
 		if (r > 0)
 			return kflag ? fr_name_pic[r]: fr_name[r];
@@ -165,10 +171,10 @@ prologue(struct interpass_prolog *ipp)
 		printf(".globl	%s\n", ipp->ipp_name);
 	printf("%s:\n", ipp->ipp_name);
 #endif
-	printf("dect	r6\n");
-	printf("mov	r11,*r6\n");
-	printf("dect	r6\n");
-	printf("mov	r7,*r6\n");
+	printf("dect	r13\n");
+	printf("mov	r11,*r13\n");
+	printf("dect	r13\n");
+	printf("mov	r12,*r13\n");
 
 	/* Allow for the frame pointer and r11 save */
 	addto = p2maxautooff - 2;
@@ -181,25 +187,26 @@ prologue(struct interpass_prolog *ipp)
 	   a bunch of cycles) a reference */
 
 	if (addto == 2) {
-		printf("dect	r6\n");
+		printf("dect	r13\n");
 		/* Set up frame pointer */
-		printf("mov	r6, r7\n");
+		printf("mov	r13, r12\n");
 	} else {
 		/* Set up frame pointer */
-		printf("mov	r6, r7\n");
+		printf("mov	r13, r12\n");
 		if (addto > 0)
-			printf("ai	%d,r6\n", -addto);
-		printf("dect	r7\n");
+			printf("ai	%d,r13\n", -addto);
+		printf("dect	r12\n");
 	}
 
 	/* Save old register variables below the frame */
-	for (i = 0; i < MAXREGS; i++)
+	for (i = 0; i < 16; i++)
 		if (TESTBIT(p2env.p_regs, i))
-			printf("dect	r6\nmov	%s,*r6\n",
+			printf("dect	r13\nmov	%s,*r13\n",
 				regname(i));
+
 	/* Might be better to have an attribute for pic library entry funcs ? */
 	if (kflag)
-		printf("dect	r6\nmov	r15,*r6\n");
+		printf("dect	r13\nmov	r15,*r13\n");
 	spcoff = 0;
 }
 
@@ -214,12 +221,11 @@ eoftn(struct interpass_prolog *ipp)
 		return; /* no code needs to be generated */
 
 	/* our registers should be top of stack */
-	for (i = 0; i < MAXREGS; i++) {
+	for (i = 0; i < 16; i++)
 		if (TESTBIT(p2env.p_regs, i))
-			printf("mov	*r6+, %s\n", regname(i));
-	}
+			printf("mov	*r13+, %s\n", regname(i));
 	if (kflag)
-		printf("mov	*r6+, r15\n");
+		printf("mov	*r13+, r15\n");
 	if (kflag == 2)
 		printf("b	@cret(r14)\n");
 	else
@@ -447,6 +453,61 @@ rmove(int s, int d, TWORD t)
 
 }
 
+/* 32bit load from r (const) into l (reg). Minimize the number of 4 byte
+   li operations in favour of two byte clr or mov */
+static void load32(NODE *p)
+{
+	int l = p->n_left->n_reg;
+
+	unsigned int r = getlval(p->n_right);
+	unsigned int rlow = (r & 0xFFFF);
+	unsigned int rhigh  = (r >> 16) & 0xFFFF;
+
+	printf("load32 %d, %d\n", l, r);
+
+	if (rlow == 0)
+		printf("clr	%s\n", regname_l(l));
+	else
+		printf("li	%s, %d\n",
+			regname_l(l), rlow);
+	if (rhigh == 0)
+		printf("clr	%s\n", regname_h(l));
+	else if (rlow == rhigh)
+		printf("mov	%s, %s\n", regname_l(l), regname_h(l));
+	else
+		printf("li	%s, %d\n", regname_h(l), rhigh);
+	printf("end\n");
+}
+
+
+/* 32bit load from l (const) into 1 (reg). Minimize the number of 4 byte
+   li operations in favour of two byte clr or mov */
+
+static void opload32(NODE *p)
+{
+	unsigned int r = getlval(p);
+	unsigned int rlow = (r & 0xFFFF);
+	unsigned int rhigh  = (r >> 16) & 0xFFFF;
+	int l = 0;
+
+	if (resc[1].n_op == FREE)
+		comperr("ofpmove: free node");
+	else
+		l = regno(&resc[1]);
+
+	if (rlow == 0)
+		printf("clr	%s\n", regname_l(l));
+	else
+		printf("li	%s, %d\n",
+			regname_l(l), rlow);
+	if (rhigh == 0)
+		printf("clr	%s\n", regname_h(l));
+	else if (rlow == rhigh)
+		printf("mov	%s, %s\n", regname_l(l), regname_h(l));
+	else
+		printf("li	%s, %d\n", regname_h(l), rhigh);
+}
+
 static int zzlab;
 
 void zzzcode(NODE *p, int c)
@@ -468,9 +529,9 @@ void zzzcode(NODE *p, int c)
 	case 'C': /* subtract stack after call */
 		spcoff -= p->n_qual;
 		if (p->n_qual == 2)
-			printf("inct	r6\n");
+			printf("inct	r13\n");
 		else if (p->n_qual > 2)
-			printf("ai	%d,r6\n", (int)p->n_qual);
+			printf("ai	%d,r13\n", (int)p->n_qual);
 		break;
 	case 'D':
 		/* Define the label from ZB */
@@ -529,10 +590,10 @@ void zzzcode(NODE *p, int c)
 		ap = attr_find(p->n_ap, ATTR_P2STRUCT);
 		o = (ap->iarg(0) + 1) & ~1;
 		if (o == 2)
-			printf("dect	r6");
+			printf("dect	r13");
 		else
-			printf("ai	r6, %d", -o);
-		printf("mov	r6,r2\n");
+			printf("ai	r13, %d", -o);
+		printf("mov	r13,r2\n");
 		printf("li	r0, %d\n", o >> 1);
 		deflab(o);
 		printf("mov	*r1+, *r2+\n");
@@ -543,6 +604,22 @@ void zzzcode(NODE *p, int c)
 	/* L see above */
 	case 'M': /* Load of an fp reg via OPLTYPE */
 		ofpmove(p);
+		break;
+	case 'N':
+		/* Load 32bit immediate with architectural shortcuts */
+		load32(p);
+		break;
+	case 'O':
+		/* Load 32bit immediate with architectural shortcuts */
+		opload32(p);
+		break;
+	case 'P':
+		/* Insert a move if the 16 and 32bit registers don't happen
+		   to align */
+		if (resc[1].n_op == FREE)
+			comperr("ZP: free node");
+		if (regno(p->n_left) != regno(&resc[1]))
+			expand(p, 0, "mov	AL,Z1; move AL to A1\n");
 		break;
 	case 'S': /* Adust sp for argument push */
 		spcoff += argsiz(p);
