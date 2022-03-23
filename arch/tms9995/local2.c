@@ -185,7 +185,7 @@ prologue(struct interpass_prolog *ipp)
 
 #ifdef LANG_F77
 	if (ipp->ipp_vis)
-		printf(".globl	%s\n", ipp->ipp_name);
+		printf(".export	%s\n", ipp->ipp_name);
 	printf("%s:\n", ipp->ipp_name);
 #endif
 	printf("dect	r13\n");
@@ -211,7 +211,7 @@ prologue(struct interpass_prolog *ipp)
 		/* Set up frame pointer */
 		printf("mov	r13, r12\n");
 		if (addto > 0)
-			printf("ai	%d,r13\n", -addto);
+			printf("ai	r13,%d\n", -addto);
 		printf("dect	r12\n");
 	}
 
@@ -441,7 +441,7 @@ static void ofpmove(NODE *p)
 		return;
 	}
 	/* Two memory objects */
-	expand(p, 0, "xxmov	ZR,Z1\nmov	UR,U1\n");
+	expand(p, 0, "mov	ZR,Z1\nmov	UR,U1\n");
 }
 
 /* rmove is used directly for temporary register moves in the compiler as
@@ -526,6 +526,29 @@ static void opload32(NODE *p)
 		printf("li	%s, %d\n", regname_h(l), rhigh);
 }
 
+static void
+uconput(FILE *fp, NODE *p)
+{
+	int val = getlval(p);
+
+	switch (p->n_op) {
+	case ICON:
+		if (p->n_name[0] != '\0') {
+			fprintf(fp, "%s", p->n_name);
+			if (val)
+				fprintf(fp, "+%d", val & 0xFFFF);
+		} else if (p->n_type == LONG || p->n_type == ULONG) {
+			val >>= 16;
+			negcon(fp, val & 0xFFFF);
+		} else
+			negcon(fp, val);
+		return;
+
+	default:
+		comperr("illegal conput, p %p", p);
+	}
+}
+
 static int zzlab;
 
 void zzzcode(NODE *p, int c)
@@ -549,7 +572,7 @@ void zzzcode(NODE *p, int c)
 		if (p->n_qual == 2)
 			printf("inct	r13\n");
 		else if (p->n_qual > 2)
-			printf("ai	%d,r13\n", (int)p->n_qual);
+			printf("ai	r13,%d\n", (int)p->n_qual);
 		break;
 	case 'D':
 		/* Define the label from ZB */
@@ -639,6 +662,11 @@ void zzzcode(NODE *p, int c)
 		if (regno(p->n_left) != regno(&resc[1]))
 			expand(p, 0, "mov	AL,Z1; move AL to A1\n");
 		break;
+	case 'Q':
+		/* Upper word right as constant without '@' */
+		uconput(stdout, p->n_right);
+		break;
+	/* R see above */
 	case 'S': /* Adust sp for argument push */
 		spcoff += argsiz(p);
 		break;
@@ -722,6 +750,7 @@ conput(FILE *fp, NODE *p)
 		comperr("illegal conput, p %p", p);
 	}
 }
+
 
 /*ARGSUSED*/
 void
@@ -834,6 +863,7 @@ adrput(FILE *io, NODE *p)
 	case ICON:
 		/* We will need to do some special handling for literals
 		   when we get to it */
+                fprintf(io, "@");
 		conput(io, p);
 		return;
 

@@ -84,28 +84,28 @@ struct optab table[] = {
 	SAREG,	TCHAR,
 	SAREG,	TWORD,
 		NAREG|NASL,	RESC1,
-		"asr	AL,8\n", },
+		"sra	AL,8\n", },
 
 /* Char to int or unsigned : from memory */
 { SCONV,	INAREG,
 	SOREG|SNAME,		TCHAR,
 	SAREG,			TWORD,
 		NAREG|NASL,	RESC1,
-		"movb	AL,A1\nasr	A1,8\n", },
+		"movb	AL,A1\nsra	A1,8\n", },
 
 /* Char or unsigned char to int or uint: constant */
 { SCONV,	INAREG,
 	SCON,			TCHAR|TUCHAR,
 	SAREG,			TWORD,
 		NAREG|NASL,	RESC1,
-		"li	A1,AL\n", },
+		"li	A1,CL\n", },
 
 /* Unsigned char to int or uint: register */
 { SCONV,	INAREG,
 	SAREG,	TUCHAR,
 	SAREG,	TWORD,
 		NAREG|NASL,	RESC1,
-		"lsr	AL,8\n", },
+		"srl	AL,8\n", },
 
 /* Unsigned char to int or uint: memory */
 { SCONV,	INAREG,
@@ -126,7 +126,7 @@ struct optab table[] = {
 	SAREG,	TUCHAR,
 	SANY,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"mov	AL,Z1\nlsr	Z1,8\nclr	U1\n", },
+		"mov	AL,Z1\nsrl	Z1,8\nclr	U1\n", },
 
 /* Unsigned char to float/double */
 /* Constant is forced into R0, masked and converted */
@@ -461,7 +461,7 @@ struct optab table[] = {
 	SCON,			TLONG|TULONG,
 		NSPECIAL,	RLEFT,
 		/* Words reversed for speed */
-		"bl	@add32i\n.word	AR\n.word	UR\n", },
+		"bl	@add32i\n.word	CR\n.word	ZQ\n", },
 
 /* Integer to pointer addition */
 { PLUS,		INAREG,
@@ -523,7 +523,7 @@ struct optab table[] = {
 	SCON,		TLONG|TULONG,
 		NSPECIAL,	RDEST,
 		/* Words reversed for speed */
-		"bl	@sub32i\n.word	AR\n.word	UR\n", },
+		"bl	@sub32i\n.word	CR\n.word	ZQ\n", },
 
 { MINUS,		INBREG|FOREFF,
 	SBREG,		TLONG|TULONG,
@@ -601,7 +601,7 @@ struct optab table[] = {
 	SAREG,	TWORD|TCHAR|TUCHAR,
 	SCON,	TWORD,
 	0,	RLEFT,
-		"asl	AL,AR\n", },
+		"sla	AL,CR\n", },
 		
 /* Shift of a register by a register. We must shift by R0, so we cannot
    keep the data in R0 */
@@ -609,21 +609,21 @@ struct optab table[] = {
 	SAREG,	TINT|TCHAR|TUNSIGNED|TUCHAR,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
-		"asl	AL,AR\n", },
+		"sla	AL,AR\n", },
 
 /* Constant shift of a word in memory */
 { LS,	INAREG|FOREFF,
 	SOREG|SNAME, TWORD,
 	SCON,	TWORD,
 	0,	RLEFT,
-		"asl	AL,AR\n", },
+		"sla	AL,CR\n", },
 
 /* Register shift of a word in memory */
 { LS,	INAREG|FOREFF,
 	SOREG|SNAME,	TWORD,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
-		"asl	AL,AR\n", },
+		"sla	AL,AR\n", },
 
 /* Same again - right unsigned 8 or 16bit shifts */
 
@@ -632,13 +632,13 @@ struct optab table[] = {
 	SAREG,	TUCHAR|TUNSIGNED,
 	SCON,	TWORD,
 	0,	RLEFT,
-		"lsr	AL,AR\n", },	/* XXX */
+		"srl	AL,CR\n", },	/* XXX */
 		
 { RS,	INAREG|FOREFF,
 	SAREG,	TUCHAR|TUNSIGNED,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
-		"lsr	AL,AR\n", },
+		"srl	AL,AR\n", },
 
 /* And signed */
 
@@ -646,13 +646,13 @@ struct optab table[] = {
 	SAREG,	TCHAR|TINT,
 	SCON,	TWORD,
 	0,	RLEFT,
-		"asr	AL,AR\n", },
+		"sra	AL,CR\n", },
 		
 { RS,	INAREG|FOREFF,
 	SAREG,	TCHAR|TINT,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
-		"asr	AL,AR\n", },
+		"sra	AL,AR\n", },
 
 /* And 32bit */
 
@@ -660,7 +660,7 @@ struct optab table[] = {
 	SBREG,	TLONG,
 	SCON,	TWORD,
 		NSPECIAL,	RLEFT,
-		"bl	@rss32i\n.word	AR\n", },
+		"bl	@rss32i\n.word	ZQ\n", },
 
 { RS,	INBREG|FOREFF,
 	SBREG,	TLONG,
@@ -672,7 +672,7 @@ struct optab table[] = {
 	SBREG,	TULONG,
 	SCON,	TWORD,
 		NSPECIAL,	RLEFT,
-		"bl	@rsu32i\n.word	AR\n", },
+		"bl	@rsu32i\n.word	ZQ\n", },
 
 { RS,	INBREG|FOREFF,
 	SBREG,	TULONG,
@@ -694,21 +694,21 @@ struct optab table[] = {
 	ARONS,	TWORD|TPOINT,
 	SZERO,		TANY,
 		0,	RESCC,
-		"clr	AL\n", },
+		"clr	AL ; assign AR to AL\n", },
 
 /* Clear word at reg */
 { ASSIGN,	FOREFF|INAREG,
 	SAREG,	TWORD|TPOINT,
 	SZERO,		TANY,
 		0,	RDEST,
-		"clr	AL\n", },
+		"clr	AL ; assign AR to AL\n", },
 
 /* Clear byte in reg */
 { ASSIGN,	FOREFF|INAREG,
 	SAREG,	TCHAR|TUCHAR,
 	SZERO,	TANY,
 		0,	RDEST,
-		"clrb	AL\n", },
+		"clrb	AL ; assign AR to AL\n", },
 
 /* The next is class B regs */
 
@@ -720,13 +720,11 @@ struct optab table[] = {
 		"clr	ZL\nclr	UL\n", },
 
 /* Must have multiple rules for long otherwise regs may be trashed */
-/* FIXME: use a Z helper for this to turn one or the other into CLR or
-   into LI, MOV for eg ffffffff */
 { ASSIGN,	FOREFF|INBREG,
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		0,	RDEST,
-		"li	ZL,AR\nli	UL,UR\n", },
+		"ZN", },
 
 { ASSIGN,	FOREFF|INBREG,
 	SBREG,			TLONG|TULONG,
@@ -762,7 +760,7 @@ struct optab table[] = {
 	SAREG,			TWORD|TPOINT,
 	SCON,			TWORD|TPOINT,
 		0,	RDEST|RESCC,
-		"li	AL,AR\n", },
+		"li	AL,CR\n", },
 
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	SAREG,			TWORD|TPOINT,
@@ -780,7 +778,7 @@ struct optab table[] = {
 	SNAME|SOREG,		TWORD|TPOINT,
 	SCON,			TWORD|TPOINT,
 		0,	RESCC,
-		"li	AL,AR\n", },
+		"li	AL,CR\n", },
 
 { ASSIGN,	FOREFF|FORCC,
 	SNAME|SOREG,		TWORD|TPOINT,
@@ -798,7 +796,7 @@ struct optab table[] = {
 	SAREG,		TCHAR|TUCHAR,
 	SCON,		TCHAR|TUCHAR,
 		0,	RDEST|RESCC,
-		"li	AL*256, AR\n", },
+		"li	AL, CR * 256\n", },
 
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	ARONS,	TCHAR|TUCHAR,
@@ -816,7 +814,7 @@ struct optab table[] = {
 	SNAME|SOREG,		TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RDEST|RESCC,
-		"li	AR*256,AL\n", },
+		"li	AL, CR*256\n", },
 
 /* Floating point */
 
@@ -853,13 +851,13 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	mul32i\n.word	UR\n.word	AR\n", },
+		"bl	@mul32i\n.word	UR\n.word	ZQ\n", },
 
 { MUL,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	mul32\n", },
+		"bl	@mul32\n", },
 
 { MUL,	INCREG,
 	SCREG,			TFLOAT,
@@ -887,13 +885,13 @@ struct optab table[] = {
 	SBREG,			TLONG,
 	SCON,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	divs32i\n.word	UR\n.word	AR\n", },
+		"bl	@divs32i\n.word	ZQ\n.word	CR\n", },
 
 { DIV,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	@divs32i\n.word	UR\n.word	AR\n", },
+		"bl	@divs32i\n.word	ZQ\n.word	CR\n", },
 
 { DIV,	INBREG,
 	SBREG,			TLONG,
@@ -933,25 +931,25 @@ struct optab table[] = {
 	SBREG,			TLONG,
 	SCON,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	@mods32i\n.word	UR\n.word	AR\n", },
+		"bl	@mods32i\n.word	ZQ\n.word	CR\n", },
 
 { MOD,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	@mod32i\n.word	UR\n.word	AR\n", },
+		"bl	@mod32i\n.word	ZQ\n.word	CR\n", },
 
 { MOD,	INBREG,
 	SBREG,			TLONG,
 	SBREG,			TLONG,
 		NSPECIAL,		RLEFT,
-		"bl	mods32\n", },
+		"bl	@mods32\n", },
 
 { MOD,	INBREG,
 	SBREG,			TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		NSPECIAL,		RLEFT,
-		"bl	mod32\n", },
+		"bl	@mod32\n", },
 
 /*
  * Indirection operators.
@@ -1162,19 +1160,19 @@ struct optab table[] = {
 	SANY,	TANY,
 	SCON,		TWORD|TPOINT|TCHAR|TUCHAR,
 		NAREG,	RESC1,
-		"clr	AL\n", },
+		"clr	A1\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
 	SCON,		TWORD|TPOINT,
 		NAREG,	RESC1,
-		"li	A1,AL\n", },
+		"li	A1,CL\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
 	SCON,		TCHAR|TUCHAR,
 		NAREG,	RESC1,
-		"li	A1*256,AL\n", },
+		"li	A1, CL * 256\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,

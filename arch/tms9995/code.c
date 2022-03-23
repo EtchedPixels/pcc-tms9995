@@ -89,7 +89,7 @@ defloc(struct symtab *sp)
 	lastloc = s;
 	n = getexname(sp);
 	if (sp->sclass == EXTDEF)
-		printf("	.globl %s\n", n);
+		printf("	.export %s\n", n);
 	if (sp->slevel == 0) {
 		printf("%s:\n", n);
 	} else {
