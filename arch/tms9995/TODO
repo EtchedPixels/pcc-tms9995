@@ -1,20 +1,18 @@
+- Swap the 32bit high/low pairs over so that RP01 matches the desired order
+  for FP and DIV.
+- The DIV rule for TINT needs to sign extend R1 into R0 not clear it
+  (and for the swap to be sorted)
+- Finish review of condition codes
 - Optimise non-use of R0 indirection. Maybe also favour not using R0/R1 when
   there is a choice ?
-- Move FP, SP out of the R0-R7 range ?
 - Struct returns need to allow for extra word due to BL behaviour ?
-- Clean up li ops to use helpers to use clr for 32bit
 - Is there a way to tell the compiler that mov sets just the EQ/NE status
   so that
 
 	MOVB *R1,R2
 	JEQ
   is valid ?
-- Review all the FORCC/ESCC cases
 - PIC for internal helpers (bl @div32(r15) etc)
 
 Longer term
-- Register support
 - Post increment modes
-
-
-

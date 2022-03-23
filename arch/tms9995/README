@@ -49,12 +49,12 @@ missed).
 
 Status
 
-Integer operations are fairly complete and generate reasonable code for the
+Integer operations are believed complete and generate reasonable code for the
 most part.
 
-Byte operations are slow but fairly complete. Performance improvements to spot
+Byte operations are slow but belived complete. Performance improvements to spot
 byte operations that can be completed without integer type conversion would
-probably require core compiler changes. Apart from string operations (which
+require some tree parsing work. Apart from string operations (which
 benefit a lot from clever asm on the tms99xx anyway) it hopefully won't hurt
 too much. Don't use uint8_t indexes thinking they'll be faster.
 
@@ -79,22 +79,22 @@ float).
 
 Implementation Details
 
-R6 is used throughout as a software stack pointer. This is a downward growing
+R13 is used throughout as a software stack pointer. This is a downward growing
 stack. There would be a small size advantage to an upward growing stack but
 it doesn't seem worth the pain.
 
-On function entry R6 holds the stack pointer, where *R6 is the first value.
-R11 has been loaded with the return address by BL. R7 is the callers frame
+On function entry R13 holds the stack pointer, where *R13 is the first value.
+R11 has been loaded with the return address by BL. R12 is the callers frame
 pointer.
 
-The entry code saves R11 and R7 on the stack and then allocates a stack frame
-if required. R7 is set to point at the first object in the frame rather than
+The entry code saves R11 and R12 on the stack and then allocates a stack frame
+if required. R12 is set to point at the first object in the frame rather than
 as would be expected at the word above. This allows the compiler to generate
 faster and shorter references to the first word of the locals. If register
 variables are present they are stacked below the frame.
 
 On return the register variables are pulled from the stack, the stack pointer
-is reset from the frame pointer and the old R5, R11 recovered. RT is used to
+is reset from the frame pointer and the old R12, R11 recovered. RT is used to
 return.
 
 Arguments are currently passed on the stack. Returns are via R1 for 16bit or
@@ -116,4 +116,5 @@ When asked to generate PIC code static data is indexed by R15 and R15 is
 saved/restored, with the assumption being that library entry stubs will set
 R15.
 
-For fully relocatable code R14 is used to index all code references.
+For fully relocatable code R14 is used to index all code references. This
+is very much a work in progress.
