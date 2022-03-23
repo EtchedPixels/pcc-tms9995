@@ -926,7 +926,6 @@ struct optab table[] = {
 		NSPECIAL,	RDEST,
 		"clr	r0\ndiv	AR,r0\n", },
 
-/* FIXME: C rule for divides ordering */
 { MOD,	INBREG,
 	SBREG,			TLONG,
 	SCON,			TLONG,
