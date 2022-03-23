@@ -97,7 +97,7 @@ static const char *fr_name_pic[] = {
 };
 
 static const char *fr_name_pic_l[] = {
-	"  xxxfr0",
+	"xxxfr0",
 	"@fr1+2(r15)",
 	"@fr2+2(r15)",
 	"@fr3+2(r15)",
@@ -139,7 +139,7 @@ static const char *regname_l(int n)
 	case CLASSC:
 		/* fr0 is an alias of r0/r1 */
 		if (r)
-			return 2 + (kflag ? fr_name_pic_l[r]: fr_name_l[r]);
+			return kflag ? fr_name_pic_l[r]: fr_name_l[r];
 		return "r1";
 	default:
 		return "XXX";
