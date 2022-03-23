@@ -404,24 +404,7 @@ struct optab table[] = {
 
 /*
  * The next rules handle all binop-style operators.
- *
- * TODO: spot two for INCT/DECT
  */
-#if 0
-/* Post-increment read, byte */
-{ PLUS,		INAREG,
-	SINCB,	TCHAR|TUCHAR,
-	SONE,	TANY,
-		NAREG,	RESC1,
-		"movb	*zg,A1\nincb	zg\n", },
-
-/* Post-increment read, int */
-{ PLUS,		INAREG,
-	SINCB,	TWORD|TPOINT,
-	SONE,	TANY,
-		NAREG,	RESC1,
-		"mov	ZG,A1\ninc	ZG\n", },
-#endif		
 
 /* Add one to anything left but use only for side effects */
 { PLUS,		FOREFF|INAREG|FORCC,
@@ -1006,15 +989,13 @@ struct optab table[] = {
 		0, 	RESCC,
 		"ci	AL,AR\n", },
 
-#if 0
 /* FIXME: need to tell it that this destroys right hand and hope that's
    still usable, or need helper - which ? */
 { OPLOG,	FORCC,
 	SCREG|SNAME|SOREG,	TFLOAT,
 	SCREG,		TFLOAT,
-		0, 	RESCC,
+		NSPECIAL, 	RESCC,
 		"sr	AL\n", },
-#endif
 
 { OPLOG,	FORCC,
 	SAREG|SCON,	TCHAR|TUCHAR,

@@ -282,7 +282,7 @@ nspecial(struct optab *q)
 	case OPLOG:
 		if (q->visit == FORCC && q->rshape == SCREG) {
 			static struct rspecial  s[] = {
-			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NRES, FR0 }, { 0, } };
+			    { NLEFT, FR0 }, { NORIGHT, FR0 }, { NEVER, FR0 }, { 0, } };
 			return s;
 		}
 		break;
