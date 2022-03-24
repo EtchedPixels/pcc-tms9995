@@ -485,7 +485,7 @@ struct optab table[] = {
 	SAREG,			TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"a	@__litb_AR,AL\n", },
+		"a	@__litb_CR,AL\n", },
 
 /* floating point */
 
@@ -975,7 +975,7 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME|SCON,	TCHAR|TUCHAR,
 	SCON,	TANY,
 		0, 	RESCC,
-		"cb	@__litb_AR, AL\n", },
+		"cb	@__litb_CR, AL\n", },
 
 { OPLOG,	FORCC,
 	SAREG|SOREG|SNAME,	TWORD|TPOINT,
@@ -1046,7 +1046,7 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"andb	@_litb_AR,AL\n", },
+		"andb	@_litb_CR,AL\n", },
 
 { OR,	INBREG|FORCC,
 	SBREG,			TLONG|TULONG,
@@ -1084,7 +1084,7 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"orb	@_litb_AR,AL\n", },
+		"orb	@_litb_CR,AL\n", },
 
 /* No XORI */
 
@@ -1109,7 +1109,7 @@ struct optab table[] = {
 	SCON|SNAME|SOREG,	TANY,
 	SANY,	TANY,
 		0,	RNOP,
-		"b	@AL\n", },
+		"b	@LL\n", },
 
 { GOTO, 	FOREFF,
 	SAREG,	TANY,
