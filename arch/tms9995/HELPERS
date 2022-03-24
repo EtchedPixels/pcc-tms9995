@@ -27,7 +27,7 @@ inc2_1:		RT
 
 add32:		A	R2,R0
 		JNC	add32_1
-		INC	R0
+		INC	R1
 add32_1		A	R3,R1
 		RT
 
@@ -58,7 +58,7 @@ sub32i:
 		SUB	*R11,R0
 		JNC	sub32_1
 		DEC	R1
-sub32i_1:	INC	@R11
+sub32i_1:	INCT	@R11
 		SUB	*R11+,R1
 		RT
 
@@ -121,3 +121,19 @@ div32:
 divs32:
 mod32:
 mods32:
+
+
+Might be worth doing a call entry helper or two so we do
+
+		mov r11,r0		save old link
+		bl @center
+
+center:
+		dect	r13
+		mov 	r0,*r13		save link
+		dect	r13
+		mov	r12,*r13	save old fp
+		mov	r13,r12		new fp
+		dect	r12		new fp offset
+		s	*r11+,r13	adjust stack
+		rt
