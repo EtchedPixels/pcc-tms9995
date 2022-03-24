@@ -12,8 +12,6 @@ make
 
 and it should build you a ccom and probably then error about a ccom2.
 
-At this point only the compiler phase is relevant and there are still some
-changes needed to the matching as9995 (in the CC68 tree for ... reasons ... )
-to move beyond the visual inspection stage.
+For the full setup see the pcc-tms9995-support github.
 
-
+https://github.com/EtchedPixels/pcc-tms9995-support
