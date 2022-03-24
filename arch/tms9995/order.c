@@ -31,7 +31,15 @@
 
 #include <string.h>
 
-int canaddr(NODE *);
+static int canaddr(NODE *p)
+{
+	int o = p->n_op;
+
+	if (o==NAME || o==REG || o==ICON || o==OREG ||
+	    (o==UMUL && shumul(p->n_left, SOREG|STARNM)))
+		return(1);
+	return(0);
+}
 
 /* is it legal to make an OREG or NAME entry which has an
  * offset of off, (from a register of r), if the

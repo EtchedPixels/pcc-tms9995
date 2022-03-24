@@ -112,7 +112,7 @@ static const char *regname(int n)
 	int r = REGBITS(n);
 	switch(GCLASS(n)) {
 	case CLASSA:
-		return rname[r];
+		return rname[r + 1];
 	case CLASSB:
 		/* This is only valid as an internal working name for debug */
 		return rpname[r];
@@ -135,7 +135,7 @@ static const char *regname_l(int n)
 	switch(GCLASS(n)) {
 	case CLASSB:
 	case CLASSA:
-		return rname[r];
+		return rname[r + 1];
 	case CLASSC:
 		/* fr0 is an alias of r0/r1 */
 		if (r)
@@ -154,9 +154,9 @@ static const char *regname_h(int n)
 	/* Not valid for class A - there is no high half but we sometimes
 	   generate them when doing SCONVs and want it to mean the same b reg */
 	case CLASSA:
-		return rname[r + 1];
+		return rname[r];
 	case CLASSB:
-		return rname[r + 1];
+		return rname[r];
 	case CLASSC:
 		if (r > 0)
 			return kflag ? fr_name_pic[r]: fr_name[r];
@@ -580,7 +580,7 @@ void zzzcode(NODE *p, int c)
 		break;
 	case 'E':
 		/* Print the ZB label */
-		printf(LABFMT, zzlab);
+		printf("@"LABFMT, zzlab);
 		break;
 	case 'F': /* long comparision */
 		twolcomp(p);
@@ -680,16 +680,6 @@ int
 rewfld(NODE *p)
 {
 	return(1);
-}
-
-int canaddr(NODE *p)
-{
-	int o = p->n_op;
-
-	if (o==NAME || o==REG || o==ICON || o==OREG ||
-	    (o==UMUL && shumul(p->n_left, SOREG|STARNM)))
-		return(1);
-	return(0);
 }
 
 /*
@@ -927,6 +917,7 @@ cbgen(int o, int lab)
 
 #define	IS1CON(p) ((p)->n_op == ICON && getlval(p) == 1)
 
+#if 0
 /*
  * Move postfix operators to the next statement, unless they are 
  * within a function call or a branch.
@@ -960,6 +951,8 @@ cvtree(NODE *p, struct interpass *ip2)
 	if (optype(p->n_op) != LTYPE)
 		cvtree(p->n_left, ip2);
 }
+#endif
+
 
 static void
 fixops(NODE *p, void *arg)
