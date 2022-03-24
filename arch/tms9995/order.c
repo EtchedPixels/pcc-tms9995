@@ -65,11 +65,6 @@ offstar(NODE *p, int shape)
 
 	if (isreg(p))
 		return; /* Is already OREG */
-
-	if (p->n_op == UMUL) {
-		if (p->n_type < PTR+LONG || p->n_type > PTR+ULONGLONG)
-			p = p->n_left; /* double indexed umul */
-	}
 	(void)geninsn(p, INAREG);
 }
 
@@ -79,6 +74,10 @@ offstar(NODE *p, int shape)
 void
 myormake(NODE *p)
 {
+	if (x2debug) {
+		printf("myormake(%p)\n", p);
+		fwalk(p, e2print, 0);
+	}
 }
 
 /*
@@ -223,7 +222,7 @@ nspecial(struct optab *q)
 		break;
 	case UMINUS:
 		if (q->visit == (INBREG|FOREFF))
-			return longfunc1;
+			return longfunconearg;
 		break;
 	case LS:
 	case RS:

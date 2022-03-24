@@ -119,7 +119,7 @@ struct optab table[] = {
 	SAREG,	TCHAR,
 	SANY,	TULONG|TLONG,
 		NBREG,	RESC1,
-		"mov	AL,Z1clr	U1\nsra	Z1,8\nci	A1,0\nZBjge	ZE\ndec	U1\nZD", },
+		"mov	AL,Z1clr	U1\nsra	Z1,8\nci	A1,0x8000\nZBjl	ZE\ndec	U1\nZD", },
 
 /* Unsigned char to unsigned long: register */
 { SCONV,	INBREG,
@@ -169,7 +169,7 @@ struct optab table[] = {
 	SAREG,	TINT|TPOINT,
 	SANY,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	A1,Z1\nclr	U1\nci	Z1,0\nZBjge	ZE\ndec	U1\nZD", },
+		"mov	A1,Z1\nclr	U1\nci	Z1,0x8000\nZBjl	ZE\ndec	U1\nZD", },
 
 /* int to float: nice and easy except for the register swap */
 { SCONV,	INCREG,
@@ -212,7 +212,7 @@ struct optab table[] = {
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 	SAREG,			TCHAR|TUCHAR,
 		NAREG,		RESC1,
-		"mov	ZL,A1; SCONV breg areg AL, A1\nswpb	A1\n", },
+		"mov	ZL,A1; sconv breg areg AL, A1\nswpb	A1\n", },
 
 /* long or unsigned long to int or uint: no work required */
 /* Alas the compiler isn't quite smart enough for this to happen in situ */
@@ -285,13 +285,13 @@ struct optab table[] = {
 	SAREG|SOREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { UCALL,	INAREG,
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { CALL,		INBREG,
 	SNAME|SCON|SOREG,	TANY,
@@ -309,13 +309,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { UCALL,	INBREG,
 	SAREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { CALL,		INCREG,
 	SNAME|SCON|SOREG,	TANY,
@@ -333,13 +333,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SCREG,	TFLOAT,
 		NCREG|NCSL,	RESC1,
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { UCALL,	INCREG,
 	SAREG,	TANY,
 	SCREG,	TFLOAT,
 		NCREG|NCSL,	RESC1,
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { CALL,		FOREFF,
 	SNAME|SCON|SOREG,	TANY,
@@ -357,13 +357,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SANY,	TANY,
 		0,	0,
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { UCALL,	FOREFF,
 	SAREG,	TANY,
 	SANY,	TANY,
 		0,	0,
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { STCALL,	INAREG,
 	SCON|SOREG|SNAME,	TANY,
@@ -393,13 +393,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 { USTCALL,	INAREG,
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	*AL\nZC", },
+		"bl	AL\nZC", },
 
 /*
  * The next rules handle all binop-style operators.
@@ -457,7 +457,7 @@ struct optab table[] = {
 	SAREG,		TWORD|TPOINT,
 	SCON,			TWORD|TPOINT,
 		0,	RLEFT|RESCC,
-		"ai	AL,AR\n", },
+		"ai	AL,CR\n", },
 
 /* Add to reg left and reclaim reg */
 { PLUS,		INAREG|FOREFF|FORCC,
@@ -484,7 +484,7 @@ struct optab table[] = {
 	SAREG,			TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"a	@__litb_CR,AL\n", },
+		"a	@__litb_ZT,AL\n", },
 
 /* floating point */
 
@@ -678,17 +678,10 @@ struct optab table[] = {
 
 /* Clear word at reg */
 { ASSIGN,	FOREFF|INAREG,
-	SAREG,	TWORD|TPOINT,
+	SAREG,	TWORD|TPOINT|TCHAR|TUCHAR,
 	SZERO,		TANY,
 		0,	RDEST,
 		"clr	AL ; assign AR to AL\n", },
-
-/* Clear byte in reg */
-{ ASSIGN,	FOREFF|INAREG,
-	SAREG,	TCHAR|TUCHAR,
-	SZERO,	TANY,
-		0,	RDEST,
-		"clrb	AL ; assign AR to AL\n", },
 
 /* The next is class B regs */
 
@@ -710,25 +703,19 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SNAME|SOREG,		TLONG|TULONG,
 		0,	RDEST,
-		"mov	ZR,ZL\nmov	UR,UL\n", },
+		"mov	ZR,ZL\nmov	UR,UL; assign AR,AL\n", },
 
 { ASSIGN,	FOREFF|INBREG,
 	SNAME|SOREG,	TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		0,	RDEST,
-		"mov	ZR,ZL\nmov	UR,UL\n", },
-
-{ ASSIGN,	FOREFF,
-	SNAME|SOREG,	TLONG|TULONG,
-	SCON,		TLONG|TULONG,
-		0,	0,
-		"ZN", },
+		"mov	ZR,ZL\nmov	UR,UL; assign AR,AL 2\n", },
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLONG|TULONG,
 	SNAME|SOREG,	TLONG|TULONG,
 		0,	0,
-		"mov	ZR,ZL\nmov	UR,UL\n", },
+		"mov	ZR,ZL\nmov	UR,UL; assign AR,AL 3\n", },
 
 { ASSIGN,	INBREG|FOREFF,
 	SBREG,	TLONG|TULONG,
@@ -746,25 +733,27 @@ struct optab table[] = {
 	SAREG,			TWORD|TPOINT,
 	SAREG|SNAME|SOREG,	TWORD|TPOINT,
 		0,	RDEST|RESCC,
-		"mov	AR,AL\n", },
+		"mov	AR,AL; 1 AL AR\n", },
 
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	ARONS,	TWORD|TPOINT,
 	SAREG,	TWORD|TPOINT,
 		0,	RDEST|RESCC,
-		"mov	AR,AL\n", },
+		"mov	AR,AL; 2\n", },
 
+#if 0
 { ASSIGN,	FOREFF|FORCC,
 	SNAME|SOREG,		TWORD|TPOINT,
 	SCON,			TWORD|TPOINT,
 		0,	RESCC,
 		"li	AL,CR\n", },
+#endif		
 
 { ASSIGN,	FOREFF|FORCC,
 	SNAME|SOREG,		TWORD|TPOINT,
 	SNAME|SOREG,		TWORD|TPOINT,
 		0,	RESCC,
-		"mov	AR,AL\n", },
+		"mov	AR,AL; 3\n", },
 
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	SAREG,		TCHAR|TUCHAR,
@@ -790,11 +779,13 @@ struct optab table[] = {
 		0,	RDEST|RESCC,
 		"movb	AR,AL\n", },
 
+#if 0
 { ASSIGN,	FOREFF|FORCC,
 	SNAME|SOREG,		TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RDEST|RESCC,
 		"li	AL, CR*256\n", },
+#endif		
 
 /* Floating point */
 
@@ -851,7 +842,7 @@ struct optab table[] = {
 	SAREG,			TINT|TPOINT,
 	SAREG|SNAME|SOREG,	TINT|TPOINT,
 		NSPECIAL,	RDEST,
-		"clr	r0\nci	r1,0\nZBjge	ZE\ndec	r0\nZD\ndivs	AR\n", },
+		"clr	r0\nci	r1,0x8000\nZBjl	ZE\ndec	r0\nZD\ndivs	AR\n", },
 
 /* div can use things other than r0/r1 but we don't */
 { DIV,	INAREG,
@@ -936,7 +927,7 @@ struct optab table[] = {
 	SANY,	TPOINT|TWORD,
 	SOREG|SNAME,	TLONG|TULONG,
 		NBREG,	RESC1, /* |NBSL - may overwrite index reg */
-		"mov	ZL,Z1\nmov	UL,U1\n", },
+		"mov	ZL,Z1\nmov	UL,U1; 32bit load AL into A1\n", },
 
 { UMUL,	INAREG,
 	SANY,	TPOINT|TWORD,
@@ -962,7 +953,7 @@ struct optab table[] = {
  * Logical/branching operators
  */
 { OPLOG,	FORCC,
-	SAREG|SOREG|SNAME|SCON,	TWORD|TPOINT,
+	SAREG,	TWORD|TPOINT,
 	SZERO,	TANY,
 		0, 	RESCC,
 		"ci	AL, 0\n", },
@@ -971,7 +962,7 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME|SCON,	TCHAR|TUCHAR,
 	SCON,	TANY,
 		0, 	RESCC,
-		"cb	@__litb_CR, AL\n", },
+		"cb	@__litb_ZT, AL\n", },
 
 { OPLOG,	FORCC,
 	SAREG|SOREG|SNAME,	TWORD|TPOINT,
@@ -980,10 +971,10 @@ struct optab table[] = {
 		"c	AR,AL\n", },
 
 { OPLOG,	FORCC,
-	SAREG|SOREG|SNAME,	TWORD|TPOINT,
-	SCON,			TWORD|TPOINT,
+	SAREG,		TWORD|TPOINT,
+	SCON,		TWORD|TPOINT,
 		0, 	RESCC,
-		"ci	AL,AR\n", },
+		"ci	AL,CR\n", },
 
 /* No compare so we subtract and destroy */
 { OPLOG,	FORCC,
@@ -999,49 +990,68 @@ struct optab table[] = {
 		"cb	AL,AR\n", },
 
 { OPLOG,	FORCC,
-	SBREG|SOREG|SNAME,	TLONG|TULONG,
-	SBREG|SOREG|SNAME,	TLONG|TULONG,
+	SBREG|SNAME|SOREG,	TLONG|TULONG,
+	SBREG|SNAME|SOREG,	TLONG|TULONG,
+		0,	RNULL,
+		"ZF", },
+
+{ OPLOG,	FORCC,
+	SBREG,		TLONG|TULONG,
+	SCON,		TLONG|TULONG,
 		0,	RNULL,
 		"ZF", },
 
 { AND,	INBREG|FORCC,
 	SBREG,			TLONG|TULONG,
-	SCON|SBREG|SOREG|SNAME,	TLONG|TULONG,
+	SCON,	TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"and	ZR,ZL\nand	UR,UL\n", },
+		"andi	ZL,ZQ\nandi	UL,CR\n", },
+
+/* This rule works because the fixops() modified the tree to complement the
+   right hand side for us */
+{ AND,	INBREG|FORCC,
+	SBREG,			TLONG|TULONG,
+	SBREG|SOREG|SNAME,	TLONG|TULONG,
+		0,	RLEFT|RESCC,
+		"szc	ZR,ZL\ninv	UL\nszc	UR,UL\n", },
 
 /* set status bits */
 { AND,	FORCC,
-	ARONS|SCON,	TWORD|TPOINT,
-	ARONS|SCON,	TWORD|TPOINT,
+	ARONS,	TWORD|TPOINT,
+	ARONS,	TWORD|TPOINT,
 		0,	RESCC,
-		"and	AR,AL\n", },
+		"szc	AR,AL\n", },
+
+/* set status bits */
+{ AND,	FORCC,
+	SAREG,		TWORD|TPOINT,
+	SCON,		TWORD|TPOINT,
+		0,	RESCC,
+		"andi	AL,AR\n", },
 
 /* AND with int */
+/* This rule works because the fixops() modified the tree to complement the
+   right hand side for us */
 { AND,	INAREG|FORCC|FOREFF,
 	SAREG|SNAME|SOREG,	TWORD,
 	SAREG|SOREG|SNAME,	TWORD,
 		0,	RLEFT|RESCC,
-		"and	AR,AL\n", },
+		"szc	AR,AL\n", },
 
 { AND,	INAREG|FORCC|FOREFF,
-	SAREG|SNAME|SOREG,	TWORD,
-	SCON,			TWORD,
+	SAREG,		TWORD,
+	SCON,		TWORD,
 		0,	RLEFT|RESCC,
-		"andi	AL,AR\n", },
+		"andi	AL,CR\n", },
 
 /* AND with char */
+/* This rule works because the fixops() modified the tree to complement the
+   right hand side for us */
 { AND,	INAREG|FORCC,
 	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 	ARONS,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"andb	AR,AL\n", },
-
-{ AND,	INAREG|FORCC,
-	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
-	SCON,			TCHAR|TUCHAR,
-		0,	RLEFT|RESCC,
-		"andb	@_litb_CR,AL\n", },
+		"szc	AR,AL\n", },
 
 { OR,	INBREG|FORCC,
 	SBREG,			TLONG|TULONG,
@@ -1053,7 +1063,7 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SCON,			TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"ori	ZL,ZR\nori	UL,UR\n", },
+		"ori	ZL,CR\nori	UL,ZQ\n", },
 
 /* OR with int */
 { OR,	FOREFF|INAREG|FORCC,
@@ -1066,7 +1076,7 @@ struct optab table[] = {
 	ARONS,		TWORD,
 	SCON,		TWORD,
 		0,	RLEFT|RESCC,
-		"ori	AL,AR\n", },
+		"ori	AL,CR\n", },
 
 /* OR with char */
 { OR,	INAREG|FORCC,
@@ -1079,7 +1089,7 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"socb	@_litb_CR,AL\n", },
+		"socb	@_litb_ZT,AL\n", },
 
 /* No XORI */
 
@@ -1129,7 +1139,7 @@ struct optab table[] = {
 	SANY,	TANY,
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	ZL,Z1\nmov	UL,U1\n", },
+		"mov	ZL,Z1\nmov	UL,U1; opltype AL,A1\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
@@ -1177,7 +1187,7 @@ struct optab table[] = {
 		"neg	AL\n", },
 
 { UMINUS,	INBREG|FOREFF,
-	SBREG,			TLONG,
+	SBREG,			TLONG|TULONG,
 	SBREG,			TANY,
 		NSPECIAL,	RLEFT,
 		"bl	@neg32\n", },

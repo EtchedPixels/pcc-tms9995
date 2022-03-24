@@ -317,6 +317,30 @@ int tlen(NODE *p)
 		}
 }
 
+static void
+uconput(FILE *fp, NODE *p)
+{
+	int val = getlval(p);
+
+	switch (p->n_op) {
+	case ICON:
+		if (p->n_name[0] != '\0') {
+			fprintf(fp, "%s", p->n_name);
+			if (val)
+				fprintf(fp, "+%d", val & 0xFFFF);
+		} else if (p->n_type == LONG || p->n_type == ULONG) {
+			val >>= 16;
+			negcon(fp, val & 0xFFFF);
+		} else
+			negcon(fp, val);
+		return;
+
+	default:
+		comperr("illegal conput, p %p", p);
+	}
+}
+
+
 /*
  * Emit code to compare two long numbers.
  */
@@ -361,10 +385,18 @@ twolcomp(NODE *p)
 	}
 	if (p->n_op >= ULE)
 		cb1 += 4, cb2 += 4;
-	expand(p, 0, "c	AL,AR\n");
+	if (p->n_right->n_op == ICON)
+		expand(p, 0, "ci	AL,CR\n");
+	else
+		expand(p, 0, "c	AL,AR\n");
 	if (cb1) cbgen(cb1, s);
 	if (cb2) cbgen(cb2, e);
-        expand(p, 0, "c	UL,UR\n");
+	if (p->n_right->n_op == ICON) {
+		expand(p, 0, "ci	UL,");
+		uconput(stdout, p->n_right);
+		printf("\n");
+	} else
+	        expand(p, 0, "c	UL,UR\n");
         cbgen(u, e);
         deflab(s);
 }
@@ -415,7 +447,7 @@ static void fpmove(NODE *p)
 		expand(p, 0, "lr	AR\n");
 		return;
 	}
-	expand(p, 0, "mov	ZR,ZL\nmov	UR,UL\n");
+	expand(p, 0, "mov	ZR,ZL\nmov	UR,UL; fpmove AR,AL\n");
 }
 
 /* R into P  where P is always going to be register allocated */
@@ -441,7 +473,7 @@ static void ofpmove(NODE *p)
 		return;
 	}
 	/* Two memory objects */
-	expand(p, 0, "mov	ZR,Z1\nmov	UR,U1\n");
+	expand(p, 0, "mov	ZR,Z1\nmov	UR,U1; ofpmove AR,A1\n");
 }
 
 /* rmove is used directly for temporary register moves in the compiler as
@@ -453,6 +485,7 @@ rmove(int s, int d, TWORD t)
 		fpmove_r(s, d);
 		return;
 	}
+	printf(";rmove %d %d\n", s, d);
 	if (t < LONG || t > BTMASK) {
 		printf("mov	%s,%s\n",
 			regname(s), regname(d));
@@ -477,12 +510,11 @@ static void load32(NODE *p)
 {
 	int l = p->n_left->n_reg;
 
-	unsigned int r = getlval(p->n_right);
+	unsigned int r = getlval(p->n_right) ;
 	unsigned int rlow = (r & 0xFFFF);
 	unsigned int rhigh  = (r >> 16) & 0xFFFF;
 
-	printf("load32 %d, %d\n", l, r);
-
+	fprintf(stderr, ";load32 r%d = %d\n", l, r);
 	if (rlow == 0)
 		printf("clr	%s\n", regname_l(l));
 	else
@@ -494,7 +526,6 @@ static void load32(NODE *p)
 		printf("mov	%s, %s\n", regname_l(l), regname_h(l));
 	else
 		printf("li	%s, %d\n", regname_h(l), rhigh);
-	printf("end\n");
 }
 
 
@@ -508,6 +539,7 @@ static void opload32(NODE *p)
 	unsigned int rhigh  = (r >> 16) & 0xFFFF;
 	int l = 0;
 
+	fprintf(stderr, ";opload32 r%d = %d\n", r, l);
 	if (resc[1].n_op == FREE)
 		comperr("ofpmove: free node");
 	else
@@ -524,29 +556,6 @@ static void opload32(NODE *p)
 		printf("mov	%s, %s\n", regname_l(l), regname_h(l));
 	else
 		printf("li	%s, %d\n", regname_h(l), rhigh);
-}
-
-static void
-uconput(FILE *fp, NODE *p)
-{
-	int val = getlval(p);
-
-	switch (p->n_op) {
-	case ICON:
-		if (p->n_name[0] != '\0') {
-			fprintf(fp, "%s", p->n_name);
-			if (val)
-				fprintf(fp, "+%d", val & 0xFFFF);
-		} else if (p->n_type == LONG || p->n_type == ULONG) {
-			val >>= 16;
-			negcon(fp, val & 0xFFFF);
-		} else
-			negcon(fp, val);
-		return;
-
-	default:
-		comperr("illegal conput, p %p", p);
-	}
 }
 
 static int zzlab;
@@ -669,6 +678,9 @@ void zzzcode(NODE *p, int c)
 	/* R see above */
 	case 'S': /* Adust sp for argument push */
 		spcoff += argsiz(p);
+		break;
+	case 'T': /* Constant - unsigned 8bit */
+		printf("%u", getlval(p->n_right));
 		break;
 	default:
 		comperr("zzzcode %c", c);
@@ -912,7 +924,7 @@ cbgen(int o, int lab)
 {
 	if (o < EQ || o > UGT)
 		comperr("bad conditional branch: %s", opst[o]);
-	printf("%s	" LABFMT "\n", ccbranches[o-EQ], lab);
+	printf("%s	@" LABFMT "\n", ccbranches[o-EQ], lab);
 }
 
 #define	IS1CON(p) ((p)->n_op == ICON && getlval(p) == 1)
@@ -962,6 +974,22 @@ fixops(NODE *p, void *arg)
 	if (!fltwritten && (p->n_type == FLOAT || p->n_type == DOUBLE)) {
 		printf(".globl	fltused\n");
 		fltwritten = 1;
+	}
+	switch (p->n_op) {
+	/* Like the PDP-11 we have a BIC style  not and AND operation but even
+	   more confusingly in our case we have a real AND for constants */
+	case AND:
+		/* Rewrite the non constant right hand side by
+		   adding a complement operator or if one existed removing it */
+		if (p->n_right->n_op != ICON) {
+			if (p->n_right->n_op == COMPL) {
+				NODE *q = p->n_right->n_left;
+				nfree(p->n_right);
+				p->n_right = q;
+			} else
+				p->n_right = mkunode(COMPL, p->n_right, 0, p->n_type);
+		}
+		break;
 	}
 }
 
