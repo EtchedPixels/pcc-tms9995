@@ -60,8 +60,7 @@ too much. Don't use uint8_t indexes thinking they'll be faster.
 
 Long operations should be complete.
 
-Floating point is a mix. The format conversion has not been done but the rest
-should be about right.
+Floating point should be mostly functional.
 
 Floating Point
 

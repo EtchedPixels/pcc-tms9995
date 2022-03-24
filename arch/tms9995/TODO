@@ -2,6 +2,7 @@
   for FP and DIV.
 - The DIV rule for TINT needs to sign extend R1 into R0 not clear it
   (and for the swap to be sorted)
+- Get rid of R10 oddity - we can use it now we dont alias regs
 - Finish review of condition codes
 - Optimise non-use of R0 indirection. Maybe also favour not using R0/R1 when
   there is a choice ?
@@ -16,3 +17,5 @@
 
 Longer term
 - Post increment modes
+- Register arguments for first 1 or 2 words  (non vararg?)
+	See pdp10 example

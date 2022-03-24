@@ -177,6 +177,7 @@ clocal(NODE *p)
 		break;
 
 	case CBRANCH:
+		/* FIXME: check if this is safe given our shifted 8 format */
 		l = p->n_left;
 		if (coptype(l->n_op) != BITYPE)
 			break;
@@ -261,7 +262,7 @@ clocal(NODE *p)
 			p->n_left = buildtree(ADDROF, l, NIL);
 		break;
 #endif
-
+	/* TODO: Do we need char mod / div rewrites ?? as per amd64 example */
 	case FORCE:
 		/* put return value in return reg */
 		p->n_op = ASSIGN;
@@ -290,6 +291,8 @@ myp2tree(NODE *p)
 	if (p->n_op != FCON)
 		return;
 
+	/* Float constants are turned into a literal. Not sure if we
+	   should keep this FIXME - also FIXME PIC */
 	sp = IALLOC(sizeof(struct symtab));
 	sp->sclass = STATIC;
 	sp->sap = 0;
@@ -405,6 +408,46 @@ instring(struct symtab *sp)
 		cerror("instring");
 }
 
+
+/* It's easier to do this than worry about all the native format encodings
+   especially as the difference for normal numbers is trivial */
+
+static unsigned int floatmangle(unsigned int nv)
+{
+	unsigned int n, r;
+	int ep;
+	unsigned int ma, sg;
+
+	/* Reverse the endianness */
+	nv &= 0xFFFFFFFFUL;
+	n = nv >> 16;
+	n |= (nv & 0xFFFF) << 16;
+
+	/* Extract the fields */
+	sg = n & 0x80000000U;
+	ep = (n >> 23) & 0xFF;
+	ma = n & 0x007FFFFFU;
+	/* Implied 1 bit */
+	ma |= 0x00800000;
+
+	/* Actual unbiased exponent */
+	ep -= 129;
+
+	/* Now the tricky bit - the mantissa is normalised in 4bit
+	   chunks not by bit */
+
+	ma >>= 3 - (ep & 3);
+	ep >>= 2;
+	ep += 0x41;
+
+	/* Copy the sign */
+	r = sg;
+	r |= ((ep & 0x7F) << 24);
+	r |= (ma & 0xFFFFFF);
+
+	return r;
+}
+
 /*
  * print out a constant node, may be associated with a label.
  * Do not free the node after use.
@@ -420,6 +463,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 	struct symtab *q;
 	TWORD t;
 	int i;
+	unsigned int fn;
 
 	t = p->n_type;
 	switch (t) {
@@ -438,8 +482,10 @@ ninval(CONSZ off, int fsz, NODE *p)
 		    (int)(glval(p) & 0xFFFF));
 		break;
 #ifndef LANG_CXX
+	/* We need to mangle this into native form */
 	case FLOAT:
-		printf(".word 0x%04x, 0x%04x\n", sfp->fp[0] >> 16, sfp->fp[0] & 0xffff);
+		fn = floatmangle(sfp->fp[0]);
+		printf(".word 0x%04x, 0x%04x\n", (fn >> 16) & 0xFFFF, fn & 0xffff);
 		break;
 	case LDOUBLE:
 	case DOUBLE:
