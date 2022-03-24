@@ -1047,7 +1047,7 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"or	ZR,ZL\nor	UR,UL\n", },
+		"soc	ZR,ZL\nsoc	UR,UL\n", },
 
 { OR,	INBREG|FORCC,
 	SBREG,			TLONG|TULONG,
@@ -1060,7 +1060,7 @@ struct optab table[] = {
 	ARONS,		TWORD,
 	ARONS|SCON,	TWORD,
 		0,	RLEFT|RESCC,
-		"or	AR,AL\n", },
+		"soc	AR,AL\n", },
 
 { OR,	FOREFF|INAREG|FORCC,
 	ARONS,		TWORD,
@@ -1073,13 +1073,13 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 	ARONS,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"orb	AR,AL\n", },
+		"socb	AR,AL\n", },
 
 { OR,	INAREG|FORCC,
 	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
 	SCON,			TCHAR|TUCHAR,
 		0,	RLEFT|RESCC,
-		"orb	@_litb_CR,AL\n", },
+		"socb	@_litb_CR,AL\n", },
 
 /* No XORI */
 
