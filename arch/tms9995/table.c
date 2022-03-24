@@ -229,7 +229,6 @@ struct optab table[] = {
 		NBREG|NBSL,	RESC1,
 		"", },
 
-/* FIXME; need to swap pair */
 /* long -> float/double */
 { SCONV,	INCREG,
 	SNAME|SOREG,	TLONG,
@@ -566,8 +565,6 @@ struct optab table[] = {
  *
  * r0 is the only permitted 'amount', and constants
  * must be 1-15. Need to check compiler never tries to output silly values
- *
- * TODO: for breg see if it's used enough to warrant ls32i1 etc
  */
  
 { LS,	INBREG|FOREFF,
@@ -849,15 +846,14 @@ struct optab table[] = {
 		"mr	AR; AL *= AR\n", },
 
 /* signed divide r0/r1 by operand into r0/r1 (r1 = remainder) */
-
-/* FIXME: this needs to fix the sign */
+/* We only have a 32 by 16 divide so sign extend first */
 { DIV,	INAREG,
 	SAREG,			TINT|TPOINT,
 	SAREG|SNAME|SOREG,	TINT|TPOINT,
 		NSPECIAL,	RDEST,
-		"clr	r0\ndivs	AR\n", },
+		"clr	r0\nci	r1,0\nZBjge	ZE\ndec	r0\nZD\ndivs	AR\n", },
 
-/* div can use thing other than r0/r1 but we don't */
+/* div can use things other than r0/r1 but we don't */
 { DIV,	INAREG,
 	SAREG,			TUNSIGNED,
 	SAREG|SNAME|SOREG,	TUNSIGNED,
@@ -989,8 +985,7 @@ struct optab table[] = {
 		0, 	RESCC,
 		"ci	AL,AR\n", },
 
-/* FIXME: need to tell it that this destroys right hand and hope that's
-   still usable, or need helper - which ? */
+/* No compare so we subtract and destroy */
 { OPLOG,	FORCC,
 	SCREG|SNAME|SOREG,	TFLOAT,
 	SCREG,		TFLOAT,

@@ -140,7 +140,11 @@ static struct rspecial longfunc[] = {
 };
 
 static struct rspecial longfunconearg[] = {
-	{NLEFT,  RP01}, {NRES, RP01}, { 0 }
+	{NLEFT,  RP01}, { NEVER, RP01 }, {NRES, RP01}, { 0 }
+};
+
+static struct rspecial longfunconeargusesr23[] = {
+	{NLEFT,  RP01}, { NEVER, RP01 }, { NEVER, RP23 }, {NRES, RP01}, { 0 }
 };
 
 static struct rspecial longfunc1[] = {
@@ -188,7 +192,7 @@ nspecial(struct optab *q)
 			return s;
 		} else if (q->visit == INBREG) {
 			if (q->rshape == SCON)
-				return longfunconearg;
+				return longfunconeargusesr23;
 			return longfunc;
                 } else if (q->visit == INCREG) {
 			return floatops;
