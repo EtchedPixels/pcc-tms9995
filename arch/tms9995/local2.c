@@ -516,7 +516,7 @@ static void load32(NODE *p)
 	unsigned int rlow = (r & 0xFFFF);
 	unsigned int rhigh  = (r >> 16) & 0xFFFF;
 
-	fprintf(stderr, ";load32 r%d = %d\n", l, r);
+	printf(";load32 r%d = %d\n", l, r);
 	if (rlow == 0)
 		printf("clr	%s\n", regname_l(l));
 	else
@@ -541,7 +541,7 @@ static void opload32(NODE *p)
 	unsigned int rhigh  = (r >> 16) & 0xFFFF;
 	int l = 0;
 
-	fprintf(stderr, ";opload32 r%d = %d\n", r, l);
+	printf(";opload32 r%d = %d\n", r, l);
 	if (resc[1].n_op == FREE)
 		comperr("ofpmove: free node");
 	else
@@ -868,7 +868,7 @@ adrput(FILE *io, NODE *p)
 		if (p->n_name[0] != '\0') {
 			fputs(p->n_name, io);
 			if (getlval(p) != 0)
-				fprintf(io, "+%d", (int)(getlval(p) & 0177777));
+				fprintf(io, "+%d", getlval(p) & 0xFFFF);
 		} else
 			negcon(io, getlval(p));
 		return;
