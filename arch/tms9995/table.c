@@ -61,8 +61,15 @@ struct optab table[] = {
 { PCONV,	INAREG,
 	SBREG|SOREG|SNAME,	TLONG|TULONG,
 	SAREG,			TPOINT,
-		0,	RLEFT,
-		"", },
+		NAREG|NASL,	RESC1,
+		"mov	AL,A1", },
+
+/* char to pointer - swap the bytes */
+{ PCONV,	INAREG,
+	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
+	SAREG,			TPOINT,
+		NAREG|NASL,	RLEFT,
+		"mov	AL,A1\nswpb	A1\n", },
 
 
 /* Unsigned char to char : no work needed */
