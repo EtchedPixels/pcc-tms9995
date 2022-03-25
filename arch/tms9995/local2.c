@@ -112,7 +112,7 @@ static const char *regname(int n)
 	int r = REGBITS(n);
 	switch(GCLASS(n)) {
 	case CLASSA:
-		return rname[r + 1];
+		return rname[r];
 	case CLASSB:
 		/* This is only valid as an internal working name for debug */
 		return rpname[r];
@@ -134,8 +134,9 @@ static const char *regname_l(int n)
 	int r = REGBITS(n);
 	switch(GCLASS(n)) {
 	case CLASSB:
-	case CLASSA:
 		return rname[r + 1];
+	case CLASSA:
+		return rname[r];
 	case CLASSC:
 		/* fr0 is an alias of r0/r1 */
 		if (r)
@@ -154,7 +155,8 @@ static const char *regname_h(int n)
 	/* Not valid for class A - there is no high half but we sometimes
 	   generate them when doing SCONVs and want it to mean the same b reg */
 	case CLASSA:
-		return rname[r];
+		return "badh";
+//		return rname[r - 1];
 	case CLASSB:
 		return rname[r];
 	case CLASSC:
@@ -680,7 +682,7 @@ void zzzcode(NODE *p, int c)
 		spcoff += argsiz(p);
 		break;
 	case 'T': /* Constant - unsigned 8bit */
-		printf("%u", getlval(p->n_right));
+		printf("%u", (unsigned)getlval(p->n_right) & 0xFF);
 		break;
 	default:
 		comperr("zzzcode %c", c);
