@@ -591,6 +591,8 @@ defzero(struct symtab *sp)
 	off = (off+(SZCHAR-1))/SZCHAR;
 	n = getexname(sp);
 	printf(".bss\n");
+	if (sp->sclass == EXTDEF || sp->sclass == EXTERN)
+		printf("	.export %s\n", n);
 	if (sp->slevel == 0)
 		printf("%s:", n);
 	else
