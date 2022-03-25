@@ -47,8 +47,10 @@ static int canaddr(NODE *p)
 int
 notoff(TWORD t, int r, CONSZ off, char *cp)
 {
-	/* R0 is special - it cannot be indexed with an offset */
-	if (r == 0 && off)
+	/* R0 is special - it cannot be indexed with an offset.
+          Subtle case: we cannot index a multi-word object at
+          offset 0 as well generate a lower word reference at + 2 */
+        if (r == 0 && off) //(off || szty(t) > 1))
 		return 1;
 	return(0);  /* YES */
 }
@@ -74,9 +76,27 @@ offstar(NODE *p, int shape)
 void
 myormake(NODE *p)
 {
+	NODE *q = p->n_left;
 	if (x2debug) {
 		printf("myormake(%p)\n", p);
 		fwalk(p, e2print, 0);
+	}
+	/* Remove any UMULs that are left over */
+	if (p->n_op == UMUL && q->n_op == REG && getlval(q) == 0) {
+		/* Here be dragons.. this might be *R0 for a 4 byte object */
+		/* In that case we need to make up a subtree moving r0
+		   into a temp and using that */
+//		if (szty(p->n_type) == 1) {
+			printf("; killed UMUL for %d\n", q->n_rval);
+			p->n_op = OREG;
+			p->n_rval = q->n_rval;
+			p->n_name = q->n_name;
+			p->n_left = NULL;	/* ??? */
+			setlval(p, 0);
+			tfree(q);
+//		} else {
+//			printf("HELP");
+//		}
 	}
 }
 
@@ -167,6 +187,14 @@ struct rspecial *
 nspecial(struct optab *q)
 {
 	switch (q->op) {
+	case UMUL:
+		if (q->visit == INBREG || q->visit == INCREG) {
+			static struct rspecial s[] = {
+				{ NOLEFT, R0 }, { 0 }
+			};
+			return s;
+		}
+		break;
 	case MUL:
 		/* FIXME: this is a hack for now. The actual rule is that
 		   reg x mam -> reg;reg+1 */

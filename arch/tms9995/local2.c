@@ -684,6 +684,42 @@ void zzzcode(NODE *p, int c)
 	case 'T': /* Constant - unsigned 8bit */
 		printf("%u", (unsigned)getlval(p->n_right) & 0xFF);
 		break;
+	case 'U': /* Assignment 32bit maybe involving an OREG */
+		/* Special handling because of R0 */
+		/* Assign L = R */
+		printf(";ZU\n");
+		if (p->n_left->n_op == OREG && p->n_left->n_rval == R0)
+			expand(p, 0, "mov	ZR, *r0+\nmov	UR,*r0\ndect	r0\n");
+		else if (p->n_right->n_op == OREG && p->n_right->n_rval == R0)
+			expand(p, 0, "mov	*r0+,ZL\nmov	*r0, UL\ndect	r0\n");
+		else
+			expand(p, 0, "mov	ZR,ZL\nmov	UR,UL\n");
+		break;
+	case 'V': /* Same thing for UMUL Z1 = ZR */
+		printf(";ZV\n");
+		if (p->n_op == OREG && p->n_rval == R0)
+			expand(p, 0, "mov	*r0+,Z1\nmov	*r0,U1\ndect	r0\n");
+		else
+			expand(p, 0, "mov	ZR,Z1\nmov	UR,U1\n");
+		break;
+	case 'W': /* And for stack push */
+		printf(";ZW\n");
+		if (p->n_left->n_op == OREG && p->n_left->n_rval == R0)
+			expand(p, 0, "ZSdect	r13\ninct	r0\nmov	*r0,*r13\ndect	r13\ndect	r0\nmov *r0,*r13\n");
+		else
+			expand(p, 0, "ZSdect	r13\nmov	ZL,*r13\ndect	r13\nmov	UL,*r13\n");
+		break;
+	case 'X':
+		printf(";ZX");
+		if (p->n_left->n_op == OREG && p->n_left->n_rval == R0)
+			expand(p, 0, "clr	*r0+\nclr 	*r0\ndect	r0\n");
+		else
+			expand(p, 0, "clr	ZL\nclr	UL\n");
+		break;
+	case 'Z': /* Force debug */
+		fwalk(p, e2print, 0);
+		fflush(stdout);
+		break;
 	default:
 		comperr("zzzcode %c", c);
 	}
@@ -1191,12 +1227,14 @@ special(NODE *p, int shape)
 		if (o == ICON && p->n_name[0] == 0 && getlval(p) == -2)
 			return SRDIR;
 		break;
+#if 0
 	case SINCB: /* Check if subject for post-inc */
 		if (p->n_op == ASSIGN && p->n_right->n_op == PLUS &&
 		    treecmp(p->n_left, p->n_right->n_left) &&
 		    is1con(p->n_right->n_right))
 			return SRDIR;
 		break;
+#endif
 	}
 	return SRNOPE;
 }

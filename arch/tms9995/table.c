@@ -129,12 +129,20 @@ struct optab table[] = {
 		"mov	AL,Z1\nsrl	Z1,8\nclr	U1\n", },
 
 /* Unsigned char to float/double */
-/* Constant is forced into R0, masked and converted */
+/* Constant is forced into R1, masked and converted */
 { SCONV,	INCREG,
-	SAREG,	TCHAR|TUCHAR,
+	SAREG,	TUCHAR,
 	SANY,	TFLOAT,
 		NSPECIAL|NCREG,	RESC1,
-		"andi	AL,0xff\ncir	AL\n", },
+		"clr	r0\nsrl	AL,8\ncir	AL\n", },
+
+/* Signed char to float/double */
+/* Constant is forced into R1, masked and converted */
+{ SCONV,	INCREG,
+	SAREG,	TCHAR,
+	SANY,	TFLOAT,
+		NSPECIAL|NCREG,	RESC1,
+		"bl	@s8fp\n", },
 
 /* Int or unsigned to char or unsigned: register */
 { SCONV,	INAREG,
@@ -586,21 +594,7 @@ struct optab table[] = {
 /* Shift of a register by a register. We must shift by R0, so we cannot
    keep the data in R0 */
 { LS,	INAREG|FOREFF,
-	SAREG,	TINT|TCHAR|TUNSIGNED|TUCHAR,
-	SAREG,	TWORD,
-	NSPECIAL,	RLEFT,
-		"sla	AL,AR\n", },
-
-/* Constant shift of a word in memory */
-{ LS,	INAREG|FOREFF,
-	SOREG|SNAME, TWORD,
-	SCON,	TWORD,
-	0,	RLEFT,
-		"sla	AL,CR\n", },
-
-/* Register shift of a word in memory */
-{ LS,	INAREG|FOREFF,
-	SOREG|SNAME,	TWORD,
+	SAREG,	TWORD|TCHAR|TUCHAR,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
 		"sla	AL,AR\n", },
@@ -690,7 +684,7 @@ struct optab table[] = {
 	SNAME|SOREG|SBREG,	TLONG|TULONG,
 	SZERO,			TANY,
 		0,	RDEST,
-		"clr	ZL\nclr	UL\n", },
+		"ZX", },
 
 /* Must have multiple rules for long otherwise regs may be trashed */
 { ASSIGN,	FOREFF|INBREG,
@@ -703,19 +697,19 @@ struct optab table[] = {
 	SBREG,			TLONG|TULONG,
 	SNAME|SOREG,		TLONG|TULONG,
 		0,	RDEST,
-		"mov	ZR,ZL\nmov	UR,UL; assign AR,AL\n", },
+		"ZU", },
 
 { ASSIGN,	FOREFF|INBREG,
 	SNAME|SOREG,	TLONG|TULONG,
 	SBREG,			TLONG|TULONG,
 		0,	RDEST,
-		"mov	ZR,ZL\nmov	UR,UL; assign AR,AL 2\n", },
+		"ZU", },
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLONG|TULONG,
 	SNAME|SOREG,	TLONG|TULONG,
 		0,	0,
-		"mov	ZR,ZL\nmov	UR,UL; assign AR,AL 3\n", },
+		"ZU", },
 
 { ASSIGN,	INBREG|FOREFF,
 	SBREG,	TLONG|TULONG,
@@ -923,11 +917,12 @@ struct optab table[] = {
 /*
  * Indirection operators.
  */
+
 { UMUL,	INBREG,
 	SANY,	TPOINT|TWORD,
 	SOREG|SNAME,	TLONG|TULONG,
-		NBREG,	RESC1, /* |NBSL - may overwrite index reg */
-		"mov	ZL,Z1\nmov	UL,U1; 32bit load AL into A1\n", },
+	NBREG,	RESC1, /* |NBSL - may overwrite index reg */
+		"ZV", },
 
 { UMUL,	INAREG,
 	SANY,	TPOINT|TWORD,
@@ -1143,7 +1138,7 @@ struct optab table[] = {
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
-	SCON,		TWORD|TPOINT|TCHAR|TUCHAR,
+	SZERO,		TWORD|TPOINT|TCHAR|TUCHAR,
 		NAREG,	RESC1,
 		"clr	A1\n", },
 
@@ -1224,7 +1219,7 @@ struct optab table[] = {
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 	SANY,	TLONG|TULONG,
 		0,	RNULL,
-		"ZSdect	r13\nmov	ZL,*r13\ndect	r13\nmov	UL,*r13\n", },
+		"ZW\n", },
 
 { FUNARG,	FOREFF,
 	SZERO,	TANY,

@@ -289,11 +289,11 @@ int COLORMAP(int c, int *r);
 #define FPREG	R12	/* frame pointer */
 #define STKREG	SP	/* stack pointer */
 
-/* A bunch of specials to make life easier for tms9995
-   FIXME: Tidy up */
+/* A bunch of specials to make life easier for tms9995 */
 #define	STWO		(MAXSPECIAL+1)	/* exactly two */
 #define	SMTWO		(MAXSPECIAL+2)	/* exactly minus two */
-/* Not used yet */
+
+/* Not used yet FIXME: Tidy up */
 #define	SINCB		(MAXSPECIAL+4)	/* post-increment */
 #define	SINCW		(MAXSPECIAL+5)	/* post-increment */
 #if 0
