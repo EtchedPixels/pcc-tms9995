@@ -146,7 +146,7 @@ struct optab table[] = {
 
 /* Int or unsigned to char or unsigned: register */
 { SCONV,	INAREG,
-	SAREG,	TWORD,
+	SAREG,	TWORD|TPOINT,
 	SANY,	TCHAR|TUCHAR,
 		NAREG|NASL,	RESC1,
 		"swpb	AL\n", },
@@ -226,7 +226,7 @@ struct optab table[] = {
 /* Alas the compiler isn't quite smart enough for this to happen in situ */
 { SCONV,	INAREG,
 	SBREG,		TLONG|TULONG,
-	SAREG,		TWORD,
+	SAREG,		TWORD|TPOINT,
 		NAREG|NASL,	RESC1,	/*XX */
 		"mov	ZL,A1; sconv breg areg AL, A1\n", },
 
@@ -599,6 +599,14 @@ struct optab table[] = {
 	NSPECIAL,	RLEFT,
 		"sla	AL,AR\n", },
 
+/* Shift of a register by a register. We must shift by R0, so we cannot
+   keep the data in R0 */
+{ LS,	INAREG|FOREFF,
+	SAREG,	TWORD|TCHAR|TUCHAR,
+	SAREG,	TCHAR|TUCHAR,
+	NSPECIAL,	RLEFT,
+		"swpb	r0\nsla	AL,AR\nswpb	r0\n", },
+
 /* Same again - right unsigned 8 or 16bit shifts */
 
 /* Shift of a register by a constant, works for 8 and 16bit */
@@ -614,6 +622,12 @@ struct optab table[] = {
 	NSPECIAL,	RLEFT,
 		"srl	AL,AR\n", },
 
+{ RS,	INAREG|FOREFF,
+	SAREG,	TUCHAR|TUNSIGNED,
+	SAREG,	TCHAR|TUCHAR,
+	NSPECIAL,	RLEFT,
+		"swpb	r0\nsrl	AL,AR\nswpb	r0\n", },
+
 /* And signed */
 
 { RS,	INAREG|FOREFF,
@@ -627,6 +641,12 @@ struct optab table[] = {
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
 		"sra	AL,AR\n", },
+
+{ RS,	INAREG|FOREFF,
+	SAREG,	TUCHAR|TUNSIGNED,
+	SAREG,	TCHAR|TUCHAR,
+	NSPECIAL,	RLEFT,
+		"swpb	r0\nsra	AL,AR\nswpb	r0\n", },
 
 /* And 32bit */
 
@@ -643,6 +663,12 @@ struct optab table[] = {
 		"bl	@rss32\n", },
 
 { RS,	INBREG|FOREFF,
+	SBREG,	TLONG,
+	SAREG,	TCHAR|TUCHAR,
+		NSPECIAL,	RLEFT,
+		"swpb	r2\nbl	@rss32\n	swpb	r2\n", },
+
+{ RS,	INBREG|FOREFF,
 	SBREG,	TULONG,
 	SCON,	TWORD,
 		NSPECIAL,	RLEFT,
@@ -653,6 +679,12 @@ struct optab table[] = {
 	SAREG,	TWORD,
 		NSPECIAL,	RLEFT,
 		"bl	@rsu32\n", },
+
+{ RS,	INBREG|FOREFF,
+	SBREG,	TULONG,
+	SAREG,	TCHAR|TUCHAR,
+		NSPECIAL,	RLEFT,
+		"swpb	r2\nbl	@rsu32\n	swpb	r2\n", },
 
 
 
