@@ -697,6 +697,18 @@ valid it will pick another solution, possibly involving moving the value to
 a temporary and issuing a constant add in order to create an OREG with no
 offset.
 
+Take care to allow for worst case offsets if you are using types that
+require multiple loads. Several of the existing targets appears to be buggy
+in this respect. If for example your largest reach is 255 bytes but you load
+a longlong from address offsets and n + 4 you need to take that into
+consideration using the passed type parameter.
+
+Note that you cannot use this function to block the use of a specific
+register for offsets. The compiler will always turn an unsuitable OREG into
+either a UMUL (for offset 0) or an addition into a temporary and then a
+UMUL, and that may itself use any register in the class irrespective of
+notoff().
+
 ````
 void offstar(NODE *p, int shape)
 ````
@@ -706,10 +718,17 @@ allows the target to manipulate the compile tree to make changes it wishes.
 ````
 void myormake(NODE *(p)
 ````
-During canonicalisation of the tree ay UMUL left after the generic rules
-attempt to convert it into an OREG are passed to myormake so that it can
+During canonicalisation of the tree ay UMUL that survives the generic
+attempt to convert it into an OREG is passed to myormake so that it can
 look for further opportunities to convert it. This occurs before mycanon()
 is invoked.
+
+The possible returns are:
+
+* SRNOPE  Cannot match this shape.
+* SRDIR   Direct match, may or may not traverse down.
+* SRREG   Will match if put in a regster
+* SROREG  Use offstar to turn this into an OREG
 
 
 ````
@@ -780,7 +799,8 @@ operation.
 NMOVTO indicates a move between classes
 
 Confusingly getting these rules wrong and the compiler stuck generating code
-often generates an error suggesting COLORMAP is buggy.
+often generates an error suggesting COLORMAP is buggy. Incorrect rules can
+also lead to nonsense register assignments without an error message.
 
 
 ````
