@@ -1218,26 +1218,26 @@ struct optab table[] = {
 	SZERO,	TLONG|TULONG,
 	SANY,	TANY,
 		0,	RNULL,
-		"ZSdect	r6\nclr	*r6\ndect	r6\nclr	*r6\n", },
+		"ZSdect	r13\nclr	*r13\ndect	r13\nclr	*r13\n", },
 
 { FUNARG,	FOREFF,
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 	SANY,	TLONG|TULONG,
 		0,	RNULL,
-		"ZSdect	r6\nmov	ZL,*r6\ndect	r6\nmov UL,*r6\n", },
+		"ZSdect	r13\nmov	ZL,*r13\ndect	r13\nmov	UL,*r13\n", },
 
 { FUNARG,	FOREFF,
 	SZERO,	TANY,
 	SANY,	TANY,
 		0,	RNULL,
-		"ZSdect	r6\nclr	*r6\n", },
+		"ZSdect	r13\nclr	*r13\n", },
 
 #if 0
 { FUNARG,	FOREFF,
 	SARGSUB,	TWORD|TPOINT,
 	SANY,		TWORD|TPOINT,
 		0,	RNULL,
-		"ZSdect	r6\nmov AL,*r6\n", },
+		"ZSdect	r13\nmov AL,*r13\n", },
 #endif
 		
 #if 0
@@ -1251,31 +1251,32 @@ struct optab table[] = {
 	SAREG|SNAME|SOREG,	TWORD|TPOINT,
 	SANY,	TWORD|TPOINT,
 		0,	RNULL,
-		"ZSdect	r6\nmov	AL,*r6\n", },
+		"ZSdect	r13\nmov	AL,*r13\n", },
 
 { FUNARG,	FOREFF,
 	SNAME|SOREG,	TCHAR,
 	SANY,		TCHAR,
 		NAREG,	RNULL,
-		"ZSdect	r6\nmovb	AL,*r6\n", },
+		"ZSdect	r13\nmovb	AL,*r13\n", },
 
 { FUNARG,	FOREFF,
 	SNAME|SOREG,	TUCHAR,
 	SANY,		TUCHAR,
 		NAREG,	RNULL,
-		"ZSdect	r6\nmovb	AL,*r6\n", },
+		"ZSdect	r13\nmovb	AL,*r13\n", },
 
 { FUNARG,	FOREFF,
 	SAREG,	TUCHAR|TCHAR,
 	SANY,	TUCHAR|TCHAR,
 		0,	RNULL,
-		"ZSdect	r6\nmovb	AL,*r6\n", },
+		"ZSdect	r13\nmovb	AL,*r13\n", },
 
+/* FIXME: need to double check fr case works.. */
 { FUNARG,	FOREFF,
 	SCREG,	TFLOAT,
 	SANY,		TANY,
 		0,	RNULL,
-		"ZSdect	r6\nmov ZL,*r6\ndect	r6\nmov UL,*r6\n", },
+		"ZSdect	r13\nmov ZL,*r13\ndect	r13\nmov UL,*r13\n", },
 
 { STARG,	FOREFF,
 	SAREG,	TPTRTO|TANY,
