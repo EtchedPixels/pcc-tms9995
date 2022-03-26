@@ -551,11 +551,11 @@ ctype(TWORD type)
 		break;
 
 	case DOUBLE:
-		MODTYPE(type, FLOAT);
+		MODTYPE(type,FLOAT);
 		break;
 
 	case LDOUBLE:
-		MODTYPE(type,DOUBLE);
+		MODTYPE(type,FLOAT);
 		break;
 
 	/* XXX remove as soon as 64-bit is added */

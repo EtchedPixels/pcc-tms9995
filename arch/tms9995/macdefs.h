@@ -36,8 +36,8 @@
  */
 #define makecc(val,i)	lastcon = i ? (val<<8)|lastcon : val
 
-#define ARGINIT		48	/* # bits above r7 where arguments start */
-#define AUTOINIT	(-16)	/* # bits below r7 where automatics start */
+#define ARGINIT		48	/* # bits above fp where arguments start */
+#define AUTOINIT	(-16)	/* # bits below fp where automatics start */
 
 /*
  * Storage space requirements
