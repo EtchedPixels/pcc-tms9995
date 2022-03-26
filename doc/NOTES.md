@@ -405,7 +405,7 @@ multiply.
 
 ### DIV
 
-Whilst this works the same was as MUL it isn't commutative so either side
+Whilst this works the same way as MUL it isn't commutative so either side
 could be constant. In addition sign matters for division so the correct
 instructions must be used for each type. Where a mix of signed and unsigned
 type occurs the rules for this are defined in ISO/IEC 9899:2011. In general
@@ -879,7 +879,6 @@ features.
 ````
 NODE *clocal(NODE *p)
 ````
-
 Before each expresssion tree is turned into code it is handed to this
 function to allow any rewriting to be done.
 
@@ -898,19 +897,16 @@ patterns where they can be done more efficiently by avoiding casting.
 
 Any other target specific pattern rewrites can also be performed as needed.
 
-
 Much of this can be cloned from other ports.
 
 ````
 int andable(NODE *p)
 ````
-
 Returns 1 if the address of a name can be taken.
 
 ````
 int cisreg(TWORD t)
 ````
-
 Returns 1 if the type in question can be placed in a register. If it is zero
 then this indicates a type that can only by referenced by its address.
 Things like struct are already managed internally by the compiler.
@@ -926,16 +922,15 @@ TODO: who owns spcon in this case
 ````
 void instring(struct symtab *sp)
 ````
-
 If MYINSTRING is defined then this routine is called to output strings of
 character variables (or widechars) into the output file.
 
 ````
 int ninval(CONSZ off, int fsz, NODE *p)
 ````
-
 Output p as a constant into the output file. Allow for any platform
 specific formatting and conversions.
+
 
 ````
 char *exname(char *p)
@@ -1142,7 +1137,7 @@ Convert a type into the required class.
 void lastcall(NODE *p)
 ````
 This is invoked on function call nodes just before the function call is
-generated. Some platform use this to calculate things like the size of the
+generated. Some platforms use this to calculate things like the size of the
 argument block being passed.
 
 ````
