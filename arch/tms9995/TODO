@@ -1,7 +1,6 @@
 - Get rid of R10 oddity - we can use it now we dont alias regs
 - Finish review of condition codes
-- Optimise non-use of R0 indirection. Maybe also favour not using R0/R1 when
-  there is a choice ?
+- Use b *r13+ over mov *r13+,r11, rt
 - Struct returns need to allow for extra word due to BL behaviour ?
 - Is there a way to tell the compiler that mov sets just the EQ/NE status
   so that
