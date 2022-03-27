@@ -817,7 +817,7 @@ requirement is hit with al holding the alignment. It should output whatever
 directives are required to align accordingly.
 
 ```
-void deflock(struct symtab *sp)
+void defloc(struct symtab *sp)
 ```
 Define everything required to make some kind of symbol appropriately
 visible.
@@ -843,7 +843,8 @@ void ejobcode(int flag)
 ````
 Called after the assembler output is generated just before the final exit.
 Allows the compiler to write markers for invalid output or similar to the
-output file.
+output file, or any final alignment requirement or things like ".end"
+directives.
 
 ````
 void bjobjcode(void)
