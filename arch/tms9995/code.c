@@ -169,6 +169,13 @@ bfcode(struct symtab **sp, int cnt)
 void
 ejobcode(int flag)
 {
+	/* Make sure the object module is even aligned */
+	printf("	.code\n");
+	printf("	.even\n");
+	printf("	.data\n");
+	printf("	.even\n");
+	printf("	.bss\n");
+	printf("	.even\n");
 }
 
 void
