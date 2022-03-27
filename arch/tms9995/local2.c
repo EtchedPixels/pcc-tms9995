@@ -240,7 +240,7 @@ eoftn(struct interpass_prolog *ipp)
 		return; /* no code needs to be generated */
 
 	/* our registers should be top of stack */
-	for (i = 0; i < 16; i++)
+	for (i = 15; i >= 0; i--)
 		if (TESTBIT(p2env.p_regs, i))
 			printf("mov	*r13+, %s\n", regname(i));
 	if (kflag)
@@ -868,7 +868,7 @@ adrput(FILE *io, NODE *p)
 		if (p->n_name[0] != '\0') {
 			fputs(p->n_name, io);
 			if (getlval(p) != 0)
-				fprintf(io, "+%d", getlval(p) & 0xFFFF);
+				fprintf(io, "+%d", (int)getlval(p) & 0xFFFF);
 		} else
 			negcon(io, getlval(p));
 		return;
