@@ -155,7 +155,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SAREG,	TWORD|TPOINT,
 	SANY,	TCHAR|TUCHAR,
-		NAREG|NASL,	RESC1,
+		0,	RLEFT,
 		"swpb	AL\n", },
 
 /* Int or unsigned to int or unsigned: register */
@@ -284,6 +284,9 @@ struct optab table[] = {
 /*
  * Subroutine calls.
  */
+
+/* Call by address of a function returning into an areg */
+
 { CALL,		INAREG,
 	SCON,	TANY,
 	SAREG,	TWORD|TPOINT|TCHAR|TUCHAR,
@@ -291,95 +294,107 @@ struct optab table[] = {
 		"bl	AL\nZC", },
 
 { UCALL,	INAREG,
-	SNAME|SCON|SOREG,	TANY,
+	SCON,	TANY,
 	SAREG,	TWORD|TPOINT|TCHAR|TUCHAR,
 		NAREG|NASL,	RESC1,
 		"bl	AL\nZC", },
 
+/* Call by pointer of a function returning into an areg */
+
 { CALL,		INAREG,
-	SAREG|SOREG,	TANY,
+	SAREG|SNAME|SOREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
 
 { UCALL,	INAREG,
-	SAREG,	TANY,
-	SANY,	TANY,
-		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\nZC", },
+	SAREG|SNAME|SOREG,	TANY,
+	SAREG,	TWORD|TPOINT|TCHAR|TUCHAR,
+		NAREG|NASL,	RESC1,
+		"mov	AL,r1\nbl	*r1\nZC", },
+
+/* Call by address of a function returning into a breg (long) */
 
 { CALL,		INBREG,
-	SNAME|SCON|SOREG,	TANY,
-	SBREG,	TLONG|TULONG,
+	SCON,	TANY,
+	SBREG|SNAME|SOREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
 		"bl	AL\nZC", },
 
 { UCALL,	INBREG,
-	SNAME|SCON|SOREG,	TANY,
+	SCON,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
 		"bl	AL\nZC", },
+
+/* Call by pointer of a function returning into a breg (long) */
 
 { CALL,		INBREG,
 	SAREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
 
 { UCALL,	INBREG,
 	SAREG,	TANY,
 	SBREG,	TLONG|TULONG,
 		NBREG|NBSL,	RESC1,
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
+
+/* Call by address of a function returning into a creg (long) */
 
 { CALL,		INCREG,
-	SNAME|SCON|SOREG,	TANY,
-	SCREG,	TFLOAT,
-		NCREG|NCSL,	RESC1,
-		"fbl	AL\nZC", },
-
-{ UCALL,	INCREG,
-	SNAME|SCON|SOREG,	TANY,
-	SCREG,	TFLOAT,
-		NCREG|NCSL,	RESC1,
-		"fbl	AL\nZC", },
-
-{ CALL,		INCREG,
-	SAREG,	TANY,
+	SCON|SNAME|SOREG,	TANY,
 	SCREG,	TFLOAT,
 		NCREG|NCSL,	RESC1,
 		"bl	AL\nZC", },
 
 { UCALL,	INCREG,
-	SAREG,	TANY,
+	SCON|SNAME|SOREG,	TANY,
 	SCREG,	TFLOAT,
 		NCREG|NCSL,	RESC1,
 		"bl	AL\nZC", },
 
+/* Call by pointer of a function returning into a creg (long) */
+
+{ CALL,		INCREG,
+	SAREG|SNAME|SOREG,	TANY,
+	SCREG,	TFLOAT,
+		NCREG|NCSL,	RESC1,
+		"mov	AL,r1\nbl	*r1\nZC", },
+
+{ UCALL,	INCREG,
+	SAREG|SNAME|SOREG,	TANY,
+	SCREG,	TFLOAT,
+		NCREG|NCSL,	RESC1,
+		"mov	AL,r1\nbl	*r1\nZC", },
+
+/* Functions being called for effect only */
 { CALL,		FOREFF,
-	SNAME|SCON|SOREG,	TANY,
+	SCON,	TANY,
 	SANY,	TANY,
 		0,	0,
 		"bl	AL\nZC", },
 
 { UCALL,	FOREFF,
-	SNAME|SCON|SOREG,	TANY,
+	SCON,	TANY,
 	SANY,	TANY,
 		0,	0,
 		"bl	AL\nZC", },
 
 { CALL,		FOREFF,
-	SAREG,	TANY,
+	SAREG|SNAME|SOREG,	TANY,
 	SANY,	TANY,
 		0,	0,
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
 
 { UCALL,	FOREFF,
-	SAREG,	TANY,
+	SAREG|SNAME|SOREG,	TANY,
 	SANY,	TANY,
 		0,	0,
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
 
+/* Function calls returning struct */
 { STCALL,	INAREG,
 	SCON|SOREG|SNAME,	TANY,
 	SANY,	TANY,
@@ -408,13 +423,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
 
 { USTCALL,	INAREG,
 	SAREG,	TANY,
 	SANY,	TANY,
 		NAREG|NASL,	RESC1,	/* should be 0 */
-		"bl	AL\nZC", },
+		"mov	AL,r1\nbl	*r1\nZC", },
 
 /*
  * The next rules handle all binop-style operators.
