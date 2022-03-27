@@ -1,4 +1,6 @@
 - Get rid of R10 oddity - we can use it now we dont alias regs
+- Why do we need the mess we have on CALL - can we rewrite the tree earlier
+  to add a UMUL between CALL -> not ICON
 - Finish review of condition codes
 - Use b *r13+ over mov *r13+,r11, rt
 - Struct returns need to allow for extra word due to BL behaviour ?
@@ -14,3 +16,6 @@ Longer term
 - Post increment modes
 - Register arguments for first 1 or 2 words  (non vararg?)
 	See pdp10 example
+- Function entry helper
+
+- Stack direction ?
