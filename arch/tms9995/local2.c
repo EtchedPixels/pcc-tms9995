@@ -1174,7 +1174,6 @@ lastcall(NODE *p)
 
 	/*
 	 * Calculate arg sizes.
-	 * Mark first arg not to have - before it.
 	 */
 	p->n_qual = 0;
 	if (p->n_op != CALL && p->n_op != FORTCALL && p->n_op != STCALL)
