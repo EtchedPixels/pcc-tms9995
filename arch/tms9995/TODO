@@ -12,6 +12,8 @@
   is valid ?
 - PIC for internal helpers (bl @div32(r15) etc)
 
+int to char helper and char to int - can we use rleft instead of mov/swap ?
+
 Longer term
 - Post increment modes
 - Register arguments for first 1 or 2 words  (non vararg?)

@@ -86,6 +86,7 @@ struct optab table[] = {
 		0,	RLEFT,
 		"", },
 
+/* FIXME: can we do this one RLEFT in situ ? */
 /* Char to int or unsigned : move byte down and sign extend */
 { SCONV,	INAREG,
 	SAREG,	TCHAR,
@@ -93,6 +94,7 @@ struct optab table[] = {
 		NAREG|NASL,	RESC1,
 		"sra	AL,8\n", },
 
+/* FIXME: can we do this one RLEFT in situ ? */
 /* Char to int or unsigned : from memory */
 { SCONV,	INAREG,
 	SOREG|SNAME,		TCHAR,
@@ -107,13 +109,16 @@ struct optab table[] = {
 		NAREG|NASL,	RESC1,
 		"li	A1,CL\n", },
 
+/* FIXME: can we do this one RLEFT in situ ? */
 /* Unsigned char to int or uint: register */
 { SCONV,	INAREG,
 	SAREG,	TUCHAR,
 	SAREG,	TWORD,
 		NAREG|NASL,	RESC1,
-		"srl	AL,8\n", },
+		"mov	AL,A1\nsrl	A1,8\n", },
 
+
+/* FIXME: can we do this one RLEFT in situ ? */
 /* Unsigned char to int or uint: memory */
 { SCONV,	INAREG,
 	SOREG|SNAME,	TUCHAR,
@@ -169,7 +174,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SAREG,	TPOINT,
 	SAREG,	TCHAR,
-		NAREG|NASL,	RESC1,
+		0,	RLEFT,
 		"swpb	AL\n", },
 
 /* Pointer to int or uint: no work */
@@ -241,7 +246,7 @@ struct optab table[] = {
 { SCONV,	INBREG,
 	SBREG,	TLONG|TULONG,
 	SANY,	TLONG|TULONG,
-		NBREG|NBSL,	RESC1,
+		0,	RLEFT,
 		"", },
 
 /* long -> float/double */
@@ -1011,13 +1016,13 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME|SCON,	TCHAR|TUCHAR,
 	SCON,	TANY,
 		0, 	RESCC,
-		"cb	@__litb_ZT, AL\n", },
+		"cb	AL,@__litb_ZT\n", },
 
 { OPLOG,	FORCC,
 	SAREG|SOREG|SNAME,	TWORD|TPOINT,
 	SAREG|SOREG|SNAME,	TWORD|TPOINT,
 		0, 	RESCC,
-		"c	AR,AL\n", },
+		"c	AL,AR\n", },
 
 { OPLOG,	FORCC,
 	SAREG,		TWORD|TPOINT,
@@ -1117,7 +1122,7 @@ struct optab table[] = {
 /* OR with int */
 { OR,	FOREFF|INAREG|FORCC,
 	ARONS,		TWORD,
-	ARONS|SCON,	TWORD,
+	ARONS,		TWORD,
 		0,	RLEFT|RESCC,
 		"soc	AR,AL\n", },
 
