@@ -1079,11 +1079,13 @@ struct optab table[] = {
 		0,	RNULL,
 		"ZF", },
 
+/* TODO : make this a rule that optimises the 0 and FFFF case bits as they
+   occur a lot and should be no-op an clear. Similarly for OR */
 { AND,	INBREG|FORCC,
 	SBREG,			TLONG|TULONG,
 	SCON,	TLONG|TULONG,
 		0,	RLEFT|RESCC,
-		"andi	ZL,ZQ\nandi	UL,CR\n", },
+		"andi	ZL,CR\nandi	UL,ZQ\n", },
 
 /* This rule works because the fixops() modified the tree to complement the
    right hand side for us */
