@@ -189,7 +189,7 @@ struct optab table[] = {
 	SAREG,	TINT|TPOINT,
 	SANY,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	A1,Z1\nclr	U1\nci	Z1,0x8000\nZBjl	ZE\ndec	U1\nZD", },
+		"mov	AL,Z1\nclr	U1\nci	Z1,0x8000\nZBjl	ZE\ndec	U1\nZD", },
 
 /* int to float: nice and easy except for the register swap */
 { SCONV,	INCREG,
