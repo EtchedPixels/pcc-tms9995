@@ -146,6 +146,14 @@ bfcode(struct symtab **sp, int cnt)
 	NODE *n;
 	int i;
 
+	/* adjust the offset for bytewide objects. We always push them
+	   16bit to keep stack alignment (and also deal with int promotion
+	   rules), which means the value is 1 byte further in */
+	for (i = 0; i < cnt ; i++) {
+		if (sp[i]->stype == CHAR || sp[i]->stype == UCHAR)
+			sp[i]->soffset += SZCHAR;
+	}
+
 	if (xtemps == 0)
 		return;
 
@@ -186,28 +194,57 @@ bjobcode(void)
 }
 
 /*
+ * Helper to insert typecasts on a function argument
+ */
+
+static NODE *promote_arg(NODE *r)
+{
+	unsigned t = UNSIGNED;
+	NODE *n;
+
+	if (szty(r->n_type) != 1)
+		return r;
+	if (r->n_type == CHAR)
+		t = INT;
+
+	n = block(SCONV, r, NIL, t, r->n_df, r->n_ap);
+	return n;
+}
+
+/*
  * Called with a function call with arguments as argument.
  * This is done early in buildtree() and only done once.
  * Returns p.
  */
+
 NODE *
 funcode(NODE *p)
 {
 	NODE *r, *l;
 
-	/* Fix function call arguments. On tms9995, just add funarg */
+	/* Fix function call arguments:
+		add FUNARG
+		turn any byte sized pushes into int to deal with both
+			promotion rules and stack alignment
+
+		The second half is matched by bfcode which adjusts
+		the corresponding argument stack offsets to match the
+		result of the typecasting
+	*/
 	for (r = p->n_right; r->n_op == CM; r = r->n_left) {
-		if (r->n_right->n_op != STARG)
+		if (r->n_right->n_op != STARG) {
+			r->n_right = promote_arg(r->n_right);
 			r->n_right = block(FUNARG, r->n_right, NIL,
 			    r->n_right->n_type, r->n_right->n_df,
 			    r->n_right->n_ap);
+		}
 	}
 	if (r->n_op != STARG) {
 		l = talloc();
 		*l = *r;
 		r->n_op = FUNARG;
-		r->n_left = l;
-		r->n_type = l->n_type;
+		r->n_left = promote_arg(l);
+		r->n_type = r->n_left->n_type;
 	}
 	return p;
 }
