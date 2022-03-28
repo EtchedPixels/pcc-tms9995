@@ -563,9 +563,19 @@ struct optab table[] = {
 
 { MINUS,		INAREG|FOREFF,
 	SAREG,			TWORD|TPOINT,
-	SAREG|SNAME|SOREG|SCON,	TWORD|TPOINT,
+	SNAME|SOREG|SAREG,	TWORD|TPOINT,
 		0,	RLEFT,
 		"s	AR,AL\n", },
+
+/* We'd like to do this but our toolchain can't resolve things like
+   -label */
+#if 0
+{ MINUS,		INAREG|FOREFF,
+	SAREG,			TWORD|TPOINT,
+	SCON,			TWORD|TPOINT,
+		0,	RLEFT,
+		"ai	AL,-CR\n", },
+#endif
 
 /* Sub one left but use only for side effects */
 { MINUS,	FOREFF,
