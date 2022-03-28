@@ -689,16 +689,16 @@ void zzzcode(NODE *p, int c)
 		/* Assign L = R */
 		printf(";ZU\n");
 		if (p->n_left->n_op == OREG && p->n_left->n_rval == R0)
-			expand(p, 0, "mov	ZR, *r0+\nmov	UR,*r0\ndect	r0\n");
+			expand(p, 0, "mov	UR, *r0+\nmov	ZR,*r0\ndect	r0\n");
 		else if (p->n_right->n_op == OREG && p->n_right->n_rval == R0)
-			expand(p, 0, "mov	*r0+,ZL\nmov	*r0, UL\ndect	r0\n");
+			expand(p, 0, "mov	*r0+,UL\nmov	*r0, ZL\ndect	r0\n");
 		else
 			expand(p, 0, "mov	ZR,ZL\nmov	UR,UL\n");
 		break;
 	case 'V': /* Same thing for UMUL Z1 = ZR */
 		printf(";ZV\n");
 		if (p->n_op == OREG && p->n_rval == R0)
-			expand(p, 0, "mov	*r0+,Z1\nmov	*r0,U1\ndect	r0\n");
+			expand(p, 0, "mov	*r0+,U1\nmov	*r0,Z1\ndect	r0\n");
 		else
 			expand(p, 0, "mov	ZR,Z1\nmov	UR,U1\n");
 		break;
