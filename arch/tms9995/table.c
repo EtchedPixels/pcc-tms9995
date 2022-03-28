@@ -897,6 +897,13 @@ struct optab table[] = {
 		NSPECIAL,	RDEST,
 		"clr	r0\nci	r1,0x8000\nZBjl	ZE\ndec	r0\nZD\ndivs	AR\n", },
 
+/* Older processors don't have divs */
+{ DIV,	INAREG,
+	SAREG,			TINT|TPOINT,
+	SAREG,			TINT|TPOINT,
+		NSPECIAL,	RDEST,
+		"bl	@dodivs\n", },
+
 /* div can use things other than r0/r1 but we don't */
 { DIV,	INAREG,
 	SAREG,			TUNSIGNED,
@@ -941,6 +948,13 @@ struct optab table[] = {
 	SAREG|SNAME|SOREG,	TINT|TPOINT,
 		NSPECIAL,	RDEST,
 		"clr	r0\ndivs	AR\n", },
+
+/* Older processors don't have divs */
+{ DIV,	INAREG,
+	SAREG,			TINT|TPOINT,
+	SAREG,			TINT|TPOINT,
+		NSPECIAL,	RDEST,
+		"bl	@domods\n", },
 
 /* div can use things other than r0/r1 but we don't */
 { MOD,	INAREG,

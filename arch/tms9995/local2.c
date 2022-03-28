@@ -1244,6 +1244,18 @@ special(NODE *p, int shape)
 void
 mflags(char *str)
 {
+	extern int m_has_divs;
+
+	unsigned set = 1;
+	if (strncmp(str, "no-", 3) == 0) {
+		str += 3;
+		set = 0;
+	}
+	if (strcmp(str, "divs") == 0) {
+		m_has_divs = set;
+		return;
+	}
+	uerror("bad mflag");
 }
 
 /*

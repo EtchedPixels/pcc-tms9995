@@ -31,6 +31,15 @@
 
 #include <string.h>
 
+/*
+ *	Feature sets
+ */
+
+unsigned m_has_divs = 1;		/* TMS9995 has divs, 9900 does not */
+
+/*
+ *	Can we addr this ?
+ */
 static int canaddr(NODE *p)
 {
 	int o = p->n_op;
@@ -214,9 +223,16 @@ nspecial(struct optab *q)
 	case DIV:
 		/* Hack for now */
 		if (q->visit == INAREG) {
-			static struct rspecial s[] = {
-			    { NORIGHT, R0 }, { NORIGHT, R1 }, { NLEFT, R1 }, { NRES, R0 }, { 0 } };
-			return s;
+			/* Early machines lack mpys divs so use a helper */
+			if (m_has_divs == 0) {
+				static struct rspecial s[] = {
+				    { NRIGHT, R0 }, { NLEFT, R1 }, { NEVER, R0 }, { NRES, R1 }, { 0 } };
+				return s;
+			} else {
+				static struct rspecial s[] = {
+				    { NORIGHT, R0 }, { NORIGHT, R1 }, { NLEFT, R1 }, { NRES, R0 }, { 0 } };
+				    return s;
+			}
 		} else if (q->visit == INBREG) {
 			if (q->rshape == SCON)
 				return longfunconeargusesr23;
@@ -229,9 +245,16 @@ nspecial(struct optab *q)
 	case MOD:
 		/* Hack for now */
 		if (q->visit == INAREG) {
-			static struct rspecial s[] = {
-			    { NORIGHT, R0 }, { NORIGHT, R1 }, { NEVER, R0 }, { NLEFT, R1 }, { NRES, R1 }, { 0 } };
-			return s;
+			/* Early machines lack mpys divs so use a helper */
+			if (m_has_divs == 0) {
+				static struct rspecial s[] = {
+				    { NRIGHT, R0 }, { NLEFT, R1 }, { NEVER, R0 }, { NRES, R1 }, { 0 } };
+				return s;
+			} else {
+				static struct rspecial s[] = {
+				    { NORIGHT, R0 }, { NORIGHT, R1 }, { NEVER, R0 }, { NLEFT, R1 }, { NRES, R1 }, { 0 } };
+				return s;
+			}
 		}
 		else if (q->visit == INBREG) { 
 			if (q->rshape == SCON)
@@ -374,5 +397,12 @@ livecall(NODE *p)
 int
 acceptable(struct optab *op)
 {
+	/* Fall back to helper calls on the 9900 if we are doing signed
+	   division 16bit with divs */
+	if (m_has_divs == 0) {
+		if ((op->op == DIV || op->op == MOD) && op->visit == INAREG &&
+			op->rshape == (SAREG|SNAME|SOREG))
+			return 0;
+	}
 	return 1;
 }
