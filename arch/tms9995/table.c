@@ -614,6 +614,12 @@ struct optab table[] = {
  
 { LS,	INBREG|FOREFF,
 	SBREG,	TLONG|TULONG,
+	SCON,	TINT|TUNSIGNED,
+		NSPECIAL,	RLEFT,
+		"bl	@ls32i\n.word	ZQ\n", },
+
+{ LS,	INBREG|FOREFF,
+	SBREG,	TLONG|TULONG,
 	SAREG,	TINT|TUNSIGNED,
 		NSPECIAL,	RLEFT,
 		"bl	@ls32\n", },
@@ -1219,7 +1225,7 @@ struct optab table[] = {
 	SANY,	TANY,
 	SBREG|SNAME|SOREG,	TLONG|TULONG,
 		NBREG,	RESC1,
-		"mov	ZL,Z1\nmov	UL,U1; opltype AL,A1\n", },
+		"mov	ZL,Z1\nmov	UL,U1; opltype UL,UL\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
