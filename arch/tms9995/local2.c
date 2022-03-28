@@ -710,7 +710,6 @@ void zzzcode(NODE *p, int c)
 			expand(p, 0, "ZSdect	r13\nmov	ZL,*r13\ndect	r13\nmov	UL,*r13\n");
 		break;
 	case 'X':
-		printf(";ZX");
 		if (p->n_left->n_op == OREG && p->n_left->n_rval == R0)
 			expand(p, 0, "clr	*r0+\nclr 	*r0\ndect	r0\n");
 		else
