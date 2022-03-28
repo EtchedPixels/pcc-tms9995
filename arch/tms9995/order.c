@@ -171,6 +171,10 @@ static struct rspecial longfunconearg[] = {
 	{NLEFT,  RP01}, { NEVER, RP01 }, {NRES, RP01}, { 0 }
 };
 
+static struct rspecial longfunconearg_shift[] = {
+	{NLEFT,  RP01}, { NEVER, R2 }, {NRES, RP01}, { 0 }
+};
+
 static struct rspecial longfunconeargusesr23[] = {
 	{NLEFT,  RP01}, { NEVER, RP01 }, { NEVER, RP23 }, {NRES, RP01}, { 0 }
 };
@@ -285,7 +289,7 @@ nspecial(struct optab *q)
 		}
 		if (q->visit == (INBREG | FOREFF)) {
 			if (q->rshape == SCON)
-				return longfunconearg;
+				return longfunconearg_shift;
 			return longintfunc;
 		}
 		break;
