@@ -66,10 +66,16 @@ struct optab table[] = {
 
 /* char to pointer - swap the bytes */
 { PCONV,	INAREG,
-	SAREG|SOREG|SNAME,	TCHAR|TUCHAR,
+	SAREG,		TCHAR|TUCHAR,
 	SAREG,			TPOINT,
-		NAREG|NASL,	RLEFT,
-		"mov	AL,A1\nswpb	A1\n", },
+		0,	RLEFT,
+		"swpb	AL\n", },
+
+{ PCONV,	INAREG,
+	SOREG|SNAME,		TCHAR|TUCHAR,
+	SAREG,			TPOINT,
+		NAREG|NASL,	RESC1,
+		"movb	AL,A1\nswpb	A1\n", },
 
 
 /* Unsigned char to char : no work needed */
@@ -91,7 +97,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SAREG,	TCHAR,
 	SAREG,	TWORD,
-		NAREG|NASL,	RESC1,
+		0,	RLEFT,
 		"sra	AL,8\n", },
 
 /* FIXME: can we do this one RLEFT in situ ? */
@@ -114,11 +120,10 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SAREG,	TUCHAR,
 	SAREG,	TWORD,
-		NAREG|NASL,	RESC1,
-		"mov	AL,A1\nsrl	A1,8\n", },
+		0,	RLEFT,
+		"srl	AL,8\n", },
 
 
-/* FIXME: can we do this one RLEFT in situ ? */
 /* Unsigned char to int or uint: memory */
 { SCONV,	INAREG,
 	SOREG|SNAME,	TUCHAR,
