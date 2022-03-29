@@ -37,6 +37,8 @@
 #define	talloc p1alloc
 #endif
 
+unsigned m_discard = 0;
+
 /*
  * Print out assembler segment name.
  */
@@ -44,7 +46,13 @@ void
 setseg(int seg, char *name)
 {
 	switch (seg) {
-	case PROG: name = ".code"; break;
+	case PROG:
+	case RDATA:
+		if (m_discard)
+			name = ".discard";
+		else
+			name = ".code";
+		break;
 	case STRNG:
 	/* FIXME */
 	case PICDATA:
@@ -53,7 +61,6 @@ setseg(int seg, char *name)
 		name = ".picrdata"; break;
 	case PICLDATA:
 		name = ".picldata"; break;
-	case RDATA:
 	case DATA:
 	case LDATA: name = ".data"; break;
 	case UDATA: break;
@@ -183,6 +190,8 @@ ejobcode(int flag)
 	printf("	.data\n");
 	printf("	.even\n");
 	printf("	.bss\n");
+	printf("	.even\n");
+	printf("	.discard\n");
 	printf("	.even\n");
 }
 

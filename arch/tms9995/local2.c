@@ -178,47 +178,59 @@ deflab(int label)
  *	It would be nicer to put the frame pointer at the base of the frame
  *	with all values indexed upwards but that doesn't seem to be handled
  *	by the compiler core so do it the generic way
+ *
+ *	Most of our prologue is a call to save space.
  */
 void
 prologue(struct interpass_prolog *ipp)
 {
 	int addto;
 	int i;
+	int baser = 0;
+	const char *fname = "";
+	int szmod = 0;
 
 #ifdef LANG_F77
 	if (ipp->ipp_vis)
 		printf(".export	%s\n", ipp->ipp_name);
 	printf("%s:\n", ipp->ipp_name);
 #endif
-	printf("dect	r13\n");
-	printf("mov	r11,*r13\n");
-	printf("dect	r13\n");
-	printf("mov	r12,*r13\n");
+
+	printf("mov	r11,r0\n");
+
+	/* We have a bunch of helper options depending upon the amount of
+	   space and variables saved */
+
+	/* Find contiguous register space allocated */
+	for (i = 6; i < 10; i++) {
+		if (TESTBIT(p2env.p_regs, i))
+			baser = i;
+		else
+			break;
+	}
+	/* Range of contiguous register variables */
+	if (baser) {
+		fname = "_r";
+		szmod = 2;
+	}
 
 	/* Allow for the frame pointer and r11 save */
-	addto = p2maxautooff - 2;
+	addto = p2maxautooff + 2;
 	if (addto & 1)
 		addto++;
 
-	/* We juggle these around a bit so that r7 is pointing to the
-	   first value not to the saved old r7. This makes our first
-	   stacked value accessible via *r7 which saves us a word (and
-	   a bunch of cycles) a reference */
-
-	if (addto == 2) {
-		printf("dect	r13\n");
-		/* Set up frame pointer */
-		printf("mov	r13, r12\n");
-	} else {
-		/* Set up frame pointer */
-		printf("mov	r13, r12\n");
-		if (addto > 0)
-			printf("ai	r13,%d\n", -addto);
-		printf("dect	r12\n");
+	if (addto <= 0)
+		printf("bl	@center0%s\n", fname);
+	else if (addto == 2)
+		printf("bl	@center2%s\n", fname);
+	else {
+		printf("bl	@center%s\n", fname);
+		printf(".word	%d\n", -(addto + szmod));
 	}
 
-	/* Save old register variables below the frame */
-	for (i = 0; i < 16; i++)
+	/* Save old register variables below the frame (6/7 are done by the
+	   _r helper */
+	for (i = 8; i < 16; i++)
 		if (TESTBIT(p2env.p_regs, i))
 			printf("dect	r13\nmov	%s,*r13\n",
 				regname(i));
@@ -234,21 +246,39 @@ void
 eoftn(struct interpass_prolog *ipp)
 {
 	int i;
+	int tr;
+
 	if (spcoff)
 		comperr("spcoff == %d", spcoff);
 	if (ipp->ipp_ip.ip_lbl == 0)
 		return; /* no code needs to be generated */
-
-	/* our registers should be top of stack */
-	for (i = 15; i >= 0; i--)
-		if (TESTBIT(p2env.p_regs, i))
-			printf("mov	*r13+, %s\n", regname(i));
 	if (kflag)
 		printf("mov	*r13+, r15\n");
-	if (kflag == 2)
-		printf("b	@cret(r14)\n");
-	else
-		printf("b	@cret\n");
+	for (i = 6; i < 10; i++)
+		if (!TESTBIT(p2env.p_regs, i))
+			break;
+	tr = i - 1;
+
+	/* our other registers should be top of stack */
+	for (i = 15; i > tr; i--)
+		if (TESTBIT(p2env.p_regs, i))
+			printf("mov	*r13+, %s\n", regname(i));
+
+	/* Our helper pushes 6/7 even if only 6 was needed */
+	if (tr == 6)
+		tr = 7;
+
+	if (tr >= 6) {
+		if (kflag == 2)
+			printf("b	@cret%d(r14)\n", tr);
+		else
+			printf("b	@cret%d\n", tr);
+	} else {
+		if (kflag == 2)
+			printf("b	@cret(r14)\n");
+		else
+			printf("b	@cret\n");
+	}
 }
 
 /*
@@ -1243,15 +1273,22 @@ special(NODE *p, int shape)
 void
 mflags(char *str)
 {
-	extern int m_has_divs;
+	extern unsigned m_has_divs;
+	extern unsigned m_discard;
 
 	unsigned set = 1;
 	if (strncmp(str, "no-", 3) == 0) {
 		str += 3;
 		set = 0;
 	}
+	/* Control instructions only on later processors */
 	if (strcmp(str, "divs") == 0) {
 		m_has_divs = set;
+		return;
+	}
+	/* Tel the compiler to put code/constants into the discard segment */
+	if (strcmp(str, "discard") == 0) {
+		m_discard = set;
 		return;
 	}
 	uerror("bad mflag");
