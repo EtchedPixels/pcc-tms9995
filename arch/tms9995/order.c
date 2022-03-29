@@ -230,7 +230,7 @@ nspecial(struct optab *q)
 			/* Early machines lack mpys divs so use a helper */
 			if (m_has_divs == 0) {
 				static struct rspecial s[] = {
-				    { NRIGHT, R0 }, { NLEFT, R1 }, { NEVER, R0 }, { NRES, R1 }, { 0 } };
+				    { NRIGHT, R2 }, { NLEFT, R1 }, { NEVER, R0 }, { NEVER, R2 }, { NRES, R1 }, { 0 } };
 				return s;
 			} else {
 				static struct rspecial s[] = {
@@ -252,7 +252,7 @@ nspecial(struct optab *q)
 			/* Early machines lack mpys divs so use a helper */
 			if (m_has_divs == 0) {
 				static struct rspecial s[] = {
-				    { NRIGHT, R0 }, { NLEFT, R1 }, { NEVER, R0 }, { NRES, R1 }, { 0 } };
+				    { NRIGHT, R2 }, { NLEFT, R1 }, { NEVER, R0 }, { NEVER, R2 }, { NRES, R1 }, { 0 } };
 				return s;
 			} else {
 				static struct rspecial s[] = {
