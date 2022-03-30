@@ -15,3 +15,8 @@ and it should build you a ccom and probably then error about a ccom2.
 For the full setup see the pcc-tms9995-support github.
 
 https://github.com/EtchedPixels/pcc-tms9995-support
+
+Status
+
+At this point the compiler can correctly build and run various test projects
+and should be usable although there may be some bugs lurking.
