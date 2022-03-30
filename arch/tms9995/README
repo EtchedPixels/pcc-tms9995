@@ -22,8 +22,8 @@ R0/R1 are hardwired into signed multiply/divide and also float.
 
 R2/R3 are also used for 64bit float
 
-There is no stack. The compiler constructs its own in software using R6 as
-the stack pointer and R5 as the frame pointer.
+There is no stack. The compiler constructs its own in software using R13 as
+the stack pointer and R12 as the frame pointer.
 
 Architectural Limits
 
@@ -82,7 +82,7 @@ R13 is used throughout as a software stack pointer. This is a downward growing
 stack. There would be a small size advantage to an upward growing stack but
 it doesn't seem worth the pain.
 
-On function entry R13 holds the stack pointer, where *R13 is the first value.
+On function entry R13 holds the stack pointer where *R13 is the first value.
 R11 has been loaded with the return address by BL. R12 is the callers frame
 pointer.
 
@@ -96,14 +96,17 @@ On return the register variables are pulled from the stack, the stack pointer
 is reset from the frame pointer and the old R12, R11 recovered. RT is used to
 return.
 
-Arguments are currently passed on the stack. Returns are via R1 for 16bit or
-R0/R1 for 32bit with R0 holding the higher bits. This is done because
+Arguments are passed in R4/R5 and further arguments are passed on the stack. In
+the case of a vararg function the first two arguments are stacked on entry to
+build a conventional stack frame.
+
+Returns are via R1 for 16bit or R0/R1 for 32bit with R0 holding the higher bits. This is done because
 
 - R0/R1 are the default 32bit pair and used as a 32bit accumulator by the
 hardware MPYS instruction, the floating point conversions and the helpers for
 32bit maths.
 
-- R1 is used for 16bit pair returns because it is the low half of the R0/R1
+- R1 is used for 16bit returns because it is the low half of the R0/R1
 pair when doing 32bit operations, and also because we want pointer returns not
 to be in r0.
 

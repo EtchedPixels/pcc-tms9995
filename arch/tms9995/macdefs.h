@@ -306,3 +306,7 @@ int COLORMAP(int c, int *r);
 /* floating point definitions */
 #define	FDFLOAT
 #define	DEFAULT_FPI_DEFS { &fpi_ffloat, &fpi_ffloat, &fpi_ffloat }
+
+/* vararg tracking */
+#define TARGET_IPP_MEMBERS			\
+	int ipp_va;

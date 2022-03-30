@@ -2,7 +2,6 @@
 - Why do we need the mess we have on CALL - can we rewrite the tree earlier
   to add a UMUL between CALL -> not ICON
 - Finish review of condition codes
-- Use b *r13+ over mov *r13+,r11, rt
 - Struct returns need to allow for extra word due to BL behaviour ?
 - Is there a way to tell the compiler that mov sets just the EQ/NE status
   so that
@@ -12,12 +11,12 @@
   is valid ?
 - PIC for internal helpers (bl @div32(r15) etc)
 
-int to char helper and char to int - can we use rleft instead of mov/swap ?
-
 Longer term
 - Post increment modes
-- Register arguments for first 1 or 2 words  (non vararg?)
-	See pdp10 example
-- Function entry helper
-
 - Stack direction ?
+
+
+Oddity
+-   &p for the first argument is offset 0 from the fp. This causes the code
+    generator to output a bogus add of 0. Looks like a core compiler bug
+    rather than it erroring the address take of a register argument

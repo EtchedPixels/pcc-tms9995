@@ -618,7 +618,14 @@ fixdef(struct symtab *sp)
 {
 }
 
+unsigned is_va;
+
 void
 pass1_lastchance(struct interpass *ip)
 {
+	if (ip->type == IP_EPILOG) {
+		struct interpass_prolog *ipp = (struct interpass_prolog *)ip;
+		ipp->ipp_va = is_va;
+		is_va = 0;
+	}
 }

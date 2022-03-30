@@ -143,38 +143,85 @@ efcode(void)
 }
 
 /*
+ * Helper to insert typecasts on a function argument
+ */
+
+static NODE *promote_arg(NODE *r)
+{
+	unsigned t = UNSIGNED;
+	NODE *n;
+
+	if (r->n_type == UCHAR)
+		t = UNSIGNED;
+	else if (r->n_type == CHAR)
+		t = INT;
+	else
+		return r;
+
+	n = block(SCONV, r, NIL, t, r->n_df, r->n_ap);
+	return n;
+}
+
+/*
  * code for the beginning of a function; a is an array of
  * indices in symtab for the arguments; n is the number
  */
 void
 bfcode(struct symtab **sp, int cnt)
 {
-	struct symtab *sp2;
-	NODE *n;
-	int i;
+	NODE *p, *q;
+	int i, n;
+	union arglist *usym;
+	extern unsigned is_va;
 
-	/* adjust the offset for bytewide objects. We always push them
-	   16bit to keep stack alignment (and also deal with int promotion
-	   rules), which means the value is 1 byte further in */
-	for (i = 0; i < cnt ; i++) {
-		if (sp[i]->stype == CHAR || sp[i]->stype == UCHAR)
-			sp[i]->soffset += SZCHAR;
-	}
+	is_va = 0;
 
-	if (xtemps == 0)
-		return;
+        /*
+         * Detect if this function has ellipses and save in lastchance
+         * for pass 2
+         */
+        usym = cftnsp->sdf->dfun;
+        while (usym && usym->type != TNULL) {
+                if (usym->type == TELLIPSIS) {
+                        is_va = 1;
+                        break;
+                }
+                ++usym;
+        }
 
-	/* put arguments in temporaries */
-	for (i = 0; i < cnt; i++) {
-		if (sp[i]->stype == STRTY || sp[i]->stype == UNIONTY ||
-		    cisreg(sp[i]->stype) == 0)
-			continue;
-		sp2 = sp[i];
-		n = tempnode(0, sp[i]->stype, sp[i]->sdf, sp[i]->sap);
-		n = buildtree(ASSIGN, n, nametree(sp2));
-		sp[i]->soffset = regno(n->n_left);
-		sp[i]->sflags |= STNODE;
-		ecomp(n);
+	/* recalculate the arg offset and create TEMP moves */
+	for (n = 4, i = 0; i < cnt; i++) {
+		if (n <= 5 && !is_va) {
+			p = tempnode(0, sp[i]->stype, sp[i]->sdf, sp[i]->sap);
+			q = block(REG, NIL, NIL,
+			    sp[i]->stype, sp[i]->sdf, sp[i]->sap);
+			q->n_rval = n;	/* R4 / R5 */
+			q = promote_arg(q);
+			p = buildtree(ASSIGN, p, q);
+			/* FIXME: need to build a subtree for type conv for
+			   char/uchar that were passed into.. at least until
+			   that bodge can be removed */
+			sp[i]->soffset = regno(p->n_left);
+			sp[i]->sflags |= STNODE;
+			ecomp(p);
+		} else {
+			sp[i]->soffset -= SZINT * (n - 4);
+		        /* adjust the offset for bytewide objects. We always push them
+			   16bit to keep stack alignment (and also deal with int promotion
+			   rules), which means the value is 1 byte further in */
+			if (sp[i]->stype == CHAR || sp[i]->stype == UCHAR)
+				sp[i]->soffset += SZCHAR;
+			if (xtemps) {
+				/* put stack args in temps if optimizing */
+				p = tempnode(0, sp[i]->stype,
+				    sp[i]->sdf, sp[i]->sap);
+				p = buildtree(ASSIGN, p, nametree(sp[i]));
+				sp[i]->soffset = regno(p->n_left);
+				sp[i]->sflags |= STNODE;
+				ecomp(p);
+			}
+		}
+		n += szty(sp[i]->stype);
 	}
 }
 
@@ -203,21 +250,54 @@ bjobcode(void)
 }
 
 /*
- * Helper to insert typecasts on a function argument
+ * Make a register node, helper for funcode.
+ */
+static NODE *
+mkreg(NODE *p, int n)
+{
+	NODE *r;
+
+	r = block(REG, NIL, NIL, p->n_type, p->n_df, p->n_ap);
+	r->n_rval = n;
+	return r;
+}
+
+static int regnum;
+
+/*
+ * Move args to registers and emit expressions bottom-up.
  */
 
-static NODE *promote_arg(NODE *r)
+static void
+fixargs(NODE *p)
 {
-	unsigned t = UNSIGNED;
-	NODE *n;
+	NODE *r;
 
-	if (szty(r->n_type) != 1)
-		return r;
-	if (r->n_type == CHAR)
-		t = INT;
-
-	n = block(SCONV, r, NIL, t, r->n_df, r->n_ap);
-	return n;
+	if (p->n_op == CM) {
+		fixargs(p->n_left);
+		r = p->n_right;
+		if (r->n_op == STARG)
+			regnum = 6; /* end of register list */
+		else if (regnum + szty(r->n_type) > 6) {
+			r = promote_arg(r);
+			p->n_right = block(FUNARG, r, NIL, r->n_type,
+			    r->n_df, r->n_ap);
+		} else {
+			p->n_right = buildtree(ASSIGN, mkreg(r, regnum), r);
+		}
+	} else {
+		if (p->n_op == STARG) {
+			regnum = 6; /* end of register list */
+		} else if (regnum + szty(p->n_type) <= 6) {
+			r = talloc();
+			*r = *p;
+			r = buildtree(ASSIGN, mkreg(r, regnum), promote_arg(r));
+			*p = *r;
+			p1nfree(r);
+		}
+		r = p;
+	}
+	regnum += szty(r->n_type);
 }
 
 /*
@@ -229,32 +309,8 @@ static NODE *promote_arg(NODE *r)
 NODE *
 funcode(NODE *p)
 {
-	NODE *r, *l;
-
-	/* Fix function call arguments:
-		add FUNARG
-		turn any byte sized pushes into int to deal with both
-			promotion rules and stack alignment
-
-		The second half is matched by bfcode which adjusts
-		the corresponding argument stack offsets to match the
-		result of the typecasting
-	*/
-	for (r = p->n_right; r->n_op == CM; r = r->n_left) {
-		if (r->n_right->n_op != STARG) {
-			r->n_right = promote_arg(r->n_right);
-			r->n_right = block(FUNARG, r->n_right, NIL,
-			    r->n_right->n_type, r->n_right->n_df,
-			    r->n_right->n_ap);
-		}
-	}
-	if (r->n_op != STARG) {
-		l = talloc();
-		*l = *r;
-		r->n_op = FUNARG;
-		r->n_left = promote_arg(l);
-		r->n_type = r->n_left->n_type;
-	}
+	regnum = 4;
+	fixargs(p->n_right);
 	return p;
 }
 

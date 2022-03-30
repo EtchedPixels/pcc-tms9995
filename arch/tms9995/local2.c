@@ -174,6 +174,25 @@ deflab(int label)
 	printf(LABFMT ":\n", label);
 }
 
+/* We write the vararg state of the function into the epilogue record. We can't
+   write it into the prologue because that happens before we find out. Instead
+   we walk the records to find our end record.
+
+   TODO; We could also check as we walk if we need a frame pointer at all */
+
+static int find_vararg(struct interpass_prolog *ipp)
+{
+	struct interpass *ip;
+
+        DLIST_FOREACH(ip, &ipp->ipp_ip, qelem) {
+		if (ip->type == IP_EPILOG) {
+			struct interpass_prolog *ipn = (struct interpass_prolog *)ip;
+			return ipn->ipp_va;
+		}
+	}
+	return 0;
+}
+
 /*
  *	It would be nicer to put the frame pointer at the base of the frame
  *	with all values indexed upwards but that doesn't seem to be handled
@@ -190,11 +209,26 @@ prologue(struct interpass_prolog *ipp)
 	const char *fname = "";
 	int szmod = 0;
 
+	int is_vararg = find_vararg(ipp);
+
 #ifdef LANG_F77
 	if (ipp->ipp_vis)
 		printf(".export	%s\n", ipp->ipp_name);
 	printf("%s:\n", ipp->ipp_name);
 #endif
+	/* Because we use a branch and link our stack right now is just the
+	   later arguments. This means we can turn varargs entirely 'normal'
+	   by just pushing these. We already lied slightly to the rest of
+	   the compiler that the arguments for a vararg function are on the
+	   stack, whilst the caller put them in registers so this should all
+	   come out in the wash */
+	if (is_vararg) {
+		printf(";varargs\n");
+		printf("dect r13\n");
+		printf("mov r5, *r13\n");
+		printf("dect r13\n");
+		printf("mov r4, *r13\n");
+	}
 
 	printf("mov	r11,r0\n");
 
@@ -218,6 +252,13 @@ prologue(struct interpass_prolog *ipp)
 	addto = p2maxautooff + 2;
 	if (addto & 1)
 		addto++;
+
+	if (kflag == 2) {
+		if(fname)
+			fname ="_r(r14)";
+		else
+			fname = "(r14)";
+	}
 
 	if (addto <= 0)
 		printf("bl	@center0%s\n", fname);
@@ -247,6 +288,11 @@ eoftn(struct interpass_prolog *ipp)
 {
 	int i;
 	int tr;
+	const char *v = "";
+
+	/* Skip the pushed register arguments */
+	if (ipp->ipp_va)
+		v = "v";
 
 	if (spcoff)
 		comperr("spcoff == %d", spcoff);
@@ -270,14 +316,14 @@ eoftn(struct interpass_prolog *ipp)
 
 	if (tr >= 6) {
 		if (kflag == 2)
-			printf("b	@cret%d(r14)\n", tr);
+			printf("b	@cret%s%d(r14)\n", v, tr);
 		else
-			printf("b	@cret%d\n", tr);
+			printf("b	@cret%s%d\n", v, tr);
 	} else {
 		if (kflag == 2)
-			printf("b	@cret(r14)\n");
+			printf("b	@cret%s(r14)\n", v);
 		else
-			printf("b	@cret\n");
+			printf("b	@cret%s\n", v);
 	}
 }
 
@@ -590,6 +636,62 @@ static void opload32(NODE *p)
 		printf("li	%s, %d\n", regname_h(l), rhigh);
 }
 
+/* The compiler thinks in registers, it has no idea about half registers
+   so it doesn't optmise some common and/or patterns that we can. Do them
+   here instead */
+
+static void andi32(NODE *p)
+{
+	unsigned int c = getlval(p->n_right);
+	switch(c & 0xFFFF) {
+	case 0:
+		expand(p, 0, "clr	ZL\n");
+		break;
+	case 0xFFFF:
+		/* No op */
+		break;
+	default:
+		expand(p, 0, "andi	ZL,CR\n");
+		break;
+	}
+	switch((c >> 16)& 0xFFFF) {
+	case 0:
+		expand(p, 0, "clr	UL\n");
+		break;
+	case 0xFFFF:
+		/* No op */
+		break;
+	default:
+		expand(p, 0, "andi	UL,ZQ\n");
+		break;
+	}
+}
+
+static void ori32(NODE *p)
+{
+	unsigned int c = getlval(p->n_right);
+	switch(c & 0xFFFF) {
+	case 0:
+		break;
+	case 0xFFFF:
+		expand(p, 0, "ldi	ZL,0xFFFF\n");
+		break;
+	default:
+		expand(p, 0, "ori	ZL,CR\n");
+		break;
+	}
+	switch((c >> 16)& 0xFFFF) {
+	case 0:
+		break;
+	case 0xFFFF:
+		expand(p, 0, "ldi	UL,0xFFFF\n");
+		break;
+	default:
+		expand(p, 0, "ori	UL,ZQ\n");
+		break;
+	}
+}
+
 static int zzlab;
 
 void zzzcode(NODE *p, int c)
@@ -748,6 +850,12 @@ void zzzcode(NODE *p, int c)
 	case 'Z': /* Force debug */
 		fwalk(p, e2print, 0);
 		fflush(stdout);
+		break;
+	case 'a': /* Optimise and 32bit immediate */
+		andi32(p);
+		break;
+	case 'o': /* Optimise or 32bit immediate */
+		ori32(p);
 		break;
 	default:
 		comperr("zzzcode %c", c);
@@ -1209,10 +1317,13 @@ lastcall(NODE *p)
 		return;
 	for (p = p->n_right; p->n_op == CM; p = p->n_left) {
 		p->n_right->n_qual = 0;
-		size += argsiz(p->n_right);
+		/* Don't count register parameters */
+		if (p->n_right->n_op != ASSIGN)
+			size += argsiz(p->n_right);
 	}
 	p->n_qual = 0;
-	size += argsiz(p);
+	if (p->n_op != ASSIGN)
+		size += argsiz(p);
 	p = op->n_right;
 
 	if (p->n_op == CM)

@@ -386,12 +386,31 @@ setorder(NODE *p)
 
 /*
  * set registers in calling conventions live.
+ *
+ * In our case we may have a couple of live registers. We walk the argument
+ * list looking for arguments that are a subtree which assigns to a register.
+ * These are our register arguments. Any other arguments will be FUNARG
+ * nodes that push data.
  */
 int *
 livecall(NODE *p)
 {
-	static int r[] = { -1 };
+	static int r[8];
+	int *s = r;
 
+	*s = -1;
+	if (p->n_op == UCALL || p->n_op == UFORTCALL || p->n_op == USTCALL ||
+	    p->n_op == FORTCALL)
+		return r;
+	for (p = p->n_right; p->n_op == CM; p = p->n_left) {
+		if (p->n_right->n_op == ASSIGN &&
+		    p->n_right->n_left->n_op == REG)
+			*s++ = p->n_right->n_left->n_rval;
+	}
+	if (p->n_op == ASSIGN &&
+	    p->n_left->n_op == REG)
+		*s++ = p->n_left->n_rval;
+	*s = -1;
 	return r;
 }
 

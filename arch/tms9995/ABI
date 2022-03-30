@@ -1,0 +1,50 @@
+Register usage
+
+R0-R5	Scratch registers, may freely be modified by the function
+
+R0/R1	Return for 32bit values, R0 is the high half
+R1	Return for 16bit or 8bit values
+
+R6-R9	Callee saved.
+
+R10	Free  (will change)
+R11	Return linkage
+R12	Frame pointer
+R13	Stack (word aligned, grows down)
+R14/R15	Reserved for future PIC/relocatable work
+
+Types
+
+char	8bit default unsigned. In registers this is the upper half, lower
+	undefined
+
+int	16bit. Occupies one register
+
+pointer	16bit. Occupies one register
+
+long:	32bit. Occupies a pair of registers
+
+float:	32bit. Occupies a pair of registers. This is not IEEE standard
+	floating point but old IBM style floating point.
+
+All 32bit types are stored with the upper word in register n and the lower
+in register n + 1. All objects in memory are big endian.
+
+Call Interface
+
+Arguments are placed in R4, R5 and then on the stack if they will not fit. An
+argument is never split between R5 and stack, the stack is used. Byte sized
+arguments are passed in int format.
+
+Returns are made in R0/R1 according to type.
+
+Stack
+
+R13 holds the stack. The stack grows downwards (at the moment). R13 points
+to the current top word. That is "mov *R13+, Rn" is a pop operation.
+
+
+Alignment
+
+All objects except byte types are word aligned (16bit aligned).
+
