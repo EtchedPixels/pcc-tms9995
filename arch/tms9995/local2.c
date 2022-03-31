@@ -464,17 +464,17 @@ twolcomp(NODE *p)
 	if (p->n_op >= ULE)
 		cb1 += 4, cb2 += 4;
 	if (p->n_right->n_op == ICON)
-		expand(p, 0, "ci	AL,CR\n");
+		expand(p, 0, "ci	UL,ZQ\n");
 	else
-		expand(p, 0, "c	AL,AR\n");
+		expand(p, 0, "c	UL,UR\n");
 	if (cb1) cbgen(cb1, s);
 	if (cb2) cbgen(cb2, e);
 	if (p->n_right->n_op == ICON) {
-		expand(p, 0, "ci	UL,");
+		expand(p, 0, "ci	ZL,CR");
 		uconput(stdout, p->n_right);
 		printf("\n");
 	} else
-	        expand(p, 0, "c	UL,UR\n");
+	        expand(p, 0, "c	ZL,ZR\n");
         cbgen(u, e);
         deflab(s);
 }

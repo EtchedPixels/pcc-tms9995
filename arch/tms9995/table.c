@@ -1078,12 +1078,17 @@ struct optab table[] = {
 		0, 	RESCC,
 		"cb	AL,AR\n", },
 
+/* We have to be careful about comparisons involving R0+n because we have
+   no inc/dec without trashing flags. It's ok to compare registers and names
+   but not always reg/oreg. We could try something complicated but this is
+   good enough for now */
 { OPLOG,	FORCC,
-	SBREG|SNAME|SOREG,	TLONG|TULONG,
-	SBREG|SNAME|SOREG,	TLONG|TULONG,
+	SBREG|SNAME,	TLONG|TULONG,
+	SBREG|SNAME,	TLONG|TULONG,
 		0,	RNULL,
 		"ZF", },
 
+/* And for constants we only have ci of a register */
 { OPLOG,	FORCC,
 	SBREG,		TLONG|TULONG,
 	SCON,		TLONG|TULONG,
