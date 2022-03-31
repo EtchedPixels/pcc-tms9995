@@ -1,3 +1,6 @@
+- We are broken if you have a vararg function of the form (char *, long ...)
+  because we blindly push both r4 and r5. We need to spot this case and only
+  push r4 somehow.
 - Get rid of R10 oddity - we can use it now we dont alias regs
 - Why do we need the mess we have on CALL - can we rewrite the tree earlier
   to add a UMUL between CALL -> not ICON
