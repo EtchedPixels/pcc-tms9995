@@ -162,6 +162,57 @@ static NODE *promote_arg(NODE *r)
 	return n;
 }
 
+/* Manage the argument register allocation rules in one place */
+static unsigned regnum;
+static unsigned regstop;
+
+#define REGSTART	R4
+#define REGEND		R5
+
+/* Start register argument allocation */
+static void reg_arg_init(void)
+{
+	regnum = REGSTART;
+	regstop = 0;
+}
+
+/* Allocate a register argument and return the register, or 0 if none */
+static unsigned reg_arg_alloc(unsigned type)
+{
+	int sz = szty(type);
+
+	if (regstop)
+		return 0;
+
+	if (regnum + sz > REGEND + 1) {
+		regstop = 1;
+		return 0;
+	}
+	/* For now just do integer/char types */
+	if (sz == 2) {
+		regnum += 2;
+		return RP45;
+	}
+	if (sz > 1) {
+		regstop = 1;
+		return 0;
+	}
+	return regnum++;
+}
+
+/* End register usage in this argument set */
+static void reg_arg_end(void)
+{
+	regstop = 1;
+}
+
+static unsigned int reg_arg_shift(void)
+{
+	/* Return the number of words to shift the arguments by to allow
+	   for those that were registerized */
+	return regnum - REGSTART;
+}
+
 /*
  * code for the beginning of a function; a is an array of
  * indices in symtab for the arguments; n is the number
@@ -171,11 +222,11 @@ bfcode(struct symtab **sp, int cnt)
 {
 	NODE *p, *q;
 	int i, n;
-	int stopreg = 0;
 	union arglist *usym;
-	extern unsigned is_va;
 
 	is_va = 0;
+
+	reg_arg_init();
 
         /*
          * Detect if this function has ellipses and save in lastchance
@@ -185,6 +236,7 @@ bfcode(struct symtab **sp, int cnt)
         while (usym && usym->type != TNULL) {
                 if (usym->type == TELLIPSIS) {
                         is_va = 1;
+			reg_arg_end();
                         break;
                 }
                 ++usym;
@@ -192,30 +244,24 @@ bfcode(struct symtab **sp, int cnt)
         /* For now just handle integer types. Pairs are a bit more painful */
 
 	/* recalculate the arg offset and create TEMP moves */
-	for (n = 4, i = 0; i < cnt; i++) {
-		/* Non long type going into a register and there are enough left,
-		   and we've yet to pass a non registerizable argument */
-		if (n <= 5 && !is_va && szty(sp[i]->stype) == 1 && !stopreg) {
+	for (i = 0; i < cnt; i++) {
+		if ((n = reg_arg_alloc(sp[i]->stype)) != 0) {
 			p = tempnode(0, sp[i]->stype, sp[i]->sdf, sp[i]->sap);
 			q = block(REG, NIL, NIL,
 			    sp[i]->stype, sp[i]->sdf, sp[i]->sap);
 			q->n_rval = n;	/* R4 / R5 */
-			q = promote_arg(q);
-			p = buildtree(ASSIGN, p, q);
 			/* FIXME: need to build a subtree for type conv for
 			   char/uchar that were passed into.. at least until
 			   that bodge can be removed */
+			q = promote_arg(q);
+			p = buildtree(ASSIGN, p, q);
 			sp[i]->soffset = regno(p->n_left);
 			sp[i]->sflags |= STNODE;
 			ecomp(p);
-			n += szty(sp[i]->stype);
 		} else {
-			/* No more register arguments after a real one */
-			stopreg = 1;
-			/* To allow for the always double push on vararg */
-			if (n == 5)
-				n = 6;
-			sp[i]->soffset -= SZINT * (n - 4);
+			/* Adjust the stack offset to allow for the previous
+			   register variables */
+			sp[i]->soffset -= SZINT * reg_arg_shift();
 		        /* adjust the offset for bytewide objects. We always push them
 			   16bit to keep stack alignment (and also deal with int promotion
 			   rules), which means the value is 1 byte further in */
@@ -271,47 +317,46 @@ mkreg(NODE *p, int n)
 	return r;
 }
 
-static int regnum;
-
 /*
- * Move args to registers and emit expressions bottom-up.
+ * Move args to registers and emit expressions bottom-up. This needs to
+ * match the behaviour (register and classes) expected by bfcode.
  */
-
 static void
 fixargs(NODE *p)
 {
 	NODE *r;
+	unsigned int n;
 
 	if (p->n_op == CM) {
 		fixargs(p->n_left);
 		r = p->n_right;
-		/* For now leave the hard stuff with pairs */
-		if (r->n_op == STARG)
+		/* For now leave the hard stuff with pairs and structs */
+		if (r->n_op == STARG) {
+			reg_arg_end();
 			return;
-		if (szty(r->n_type) != 1 || regnum >= 6) {
+		}
+		n = reg_arg_alloc(r->n_type);
+		if (n)
+			p->n_right = buildtree(ASSIGN, mkreg(r, n), r);
+		else {
 			r = promote_arg(r);
 			p->n_right = block(FUNARG, r, NIL, r->n_type,
 			    r->n_df, r->n_ap);
-		} else {
-			p->n_right = buildtree(ASSIGN, mkreg(r, regnum), r);
-			regnum += szty(r->n_type);
 		}
 		return;
 	}
 	if (p->n_op == STARG) {
-		regnum = 6;
+		reg_arg_end();
 		return;
 	}
-	if (regnum < 6 && szty(p->n_type) == 1) {
+	n = reg_arg_alloc(p->n_type);
+	if (n) {
 		r = talloc();
 		*r = *p;
-		r = buildtree(ASSIGN, mkreg(r, regnum), promote_arg(r));
+		r = buildtree(ASSIGN, mkreg(r, n), promote_arg(r));
 		*p = *r;
 		p1nfree(r);
-		regnum += szty(r->n_type);
 	} else {
-		regnum = 6;
-		/* FIXME: promote arg */
 		r = talloc();
 		*r = *p;
 		p->n_op = FUNARG;
@@ -325,12 +370,14 @@ fixargs(NODE *p)
  * Called with a function call with arguments as argument.
  * This is done early in buildtree() and only done once.
  * Returns p.
+ *
+ * FIXME: need to identify vararg calls.
  */
 
 NODE *
 funcode(NODE *p)
 {
-	regnum = 4;
+	reg_arg_init();
 	fixargs(p->n_right);
 	return p;
 }
