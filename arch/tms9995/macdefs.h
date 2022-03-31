@@ -151,8 +151,8 @@ typedef long long OFFSZ;
 #define	R1	0x01	/* Scratch and return register */
 #define	R2	0x02	/* Scratch register */
 #define	R3	0x03	/* Scratch register */
-#define	R4	0x02	/* Scratch register */
-#define	R5	0x03	/* Scratch register */
+#define	R4	0x04	/* Scratch register */
+#define	R5	0x05	/* Scratch register */
 #define	R6	0x06	/* Scratch register or register variable */
 #define R7	0x07	/* Scratch register or register variable */
 #define	R8	0x08	/* Scratch register or register variable */
@@ -310,3 +310,5 @@ int COLORMAP(int c, int *r);
 /* vararg tracking */
 #define TARGET_IPP_MEMBERS			\
 	int ipp_va;
+
+extern unsigned int is_va;
