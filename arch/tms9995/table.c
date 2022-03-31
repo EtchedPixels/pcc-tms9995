@@ -1167,7 +1167,7 @@ struct optab table[] = {
 		"soc	AR,AL\n", },
 
 { OR,	FOREFF|INAREG|FORCC,
-	ARONS,		TWORD,
+	SAREG,		TWORD,
 	SCON,		TWORD,
 		0,	RLEFT|RESCC,
 		"ori	AL,CR\n", },
