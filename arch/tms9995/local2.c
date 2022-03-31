@@ -1249,7 +1249,7 @@ COLORMAP(int c, int *r)
 		/* Class C can take out another 1 (we have no R15,0) */
 		if (cc)
 			cb ++;
-		return cb < 10;	/* We have 10 */
+		return cb < 5;	/* We have 10 but they overlap */
 	case CLASSC:
 		/* We can lose one class C register if any A or B are
 		   allocated */
