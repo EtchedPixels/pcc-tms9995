@@ -168,7 +168,7 @@ static struct rspecial longfunc[] = {
 };
 
 static struct rspecial longfunconearg[] = {
-	{NLEFT,  RP01}, { NEVER, RP01 }, {NRES, RP01}, { 0 }
+	{NLEFT,  RP01}, { 0 }
 };
 
 static struct rspecial longfunconearg_shift[] = {
