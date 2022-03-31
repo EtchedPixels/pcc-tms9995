@@ -171,6 +171,7 @@ bfcode(struct symtab **sp, int cnt)
 {
 	NODE *p, *q;
 	int i, n;
+	int stopreg = 0;
 	union arglist *usym;
 	extern unsigned is_va;
 
@@ -188,10 +189,13 @@ bfcode(struct symtab **sp, int cnt)
                 }
                 ++usym;
         }
+        /* For now just handle integer types. Pairs are a bit more painful */
 
 	/* recalculate the arg offset and create TEMP moves */
 	for (n = 4, i = 0; i < cnt; i++) {
-		if (n <= 5 && !is_va) {
+		/* Non long type going into a register and there are enough left,
+		   and we've yet to pass a non registerizable argument */
+		if (n <= 5 && !is_va && szty(sp[i]->stype) == 1 && !stopreg) {
 			p = tempnode(0, sp[i]->stype, sp[i]->sdf, sp[i]->sap);
 			q = block(REG, NIL, NIL,
 			    sp[i]->stype, sp[i]->sdf, sp[i]->sap);
@@ -204,7 +208,13 @@ bfcode(struct symtab **sp, int cnt)
 			sp[i]->soffset = regno(p->n_left);
 			sp[i]->sflags |= STNODE;
 			ecomp(p);
+			n += szty(sp[i]->stype);
 		} else {
+			/* No more register arguments after a real one */
+			stopreg = 1;
+			/* To allow for the always double push on vararg */
+			if (n == 5)
+				n = 6;
 			sp[i]->soffset -= SZINT * (n - 4);
 		        /* adjust the offset for bytewide objects. We always push them
 			   16bit to keep stack alignment (and also deal with int promotion
@@ -221,7 +231,6 @@ bfcode(struct symtab **sp, int cnt)
 				ecomp(p);
 			}
 		}
-		n += szty(sp[i]->stype);
 	}
 }
 
@@ -276,28 +285,40 @@ fixargs(NODE *p)
 	if (p->n_op == CM) {
 		fixargs(p->n_left);
 		r = p->n_right;
+		/* For now leave the hard stuff with pairs */
 		if (r->n_op == STARG)
-			regnum = 6; /* end of register list */
-		else if (regnum + szty(r->n_type) > 6) {
+			return;
+		if (szty(r->n_type) != 1 || regnum >= 6) {
 			r = promote_arg(r);
 			p->n_right = block(FUNARG, r, NIL, r->n_type,
 			    r->n_df, r->n_ap);
 		} else {
 			p->n_right = buildtree(ASSIGN, mkreg(r, regnum), r);
+			regnum += szty(r->n_type);
 		}
-	} else {
-		if (p->n_op == STARG) {
-			regnum = 6; /* end of register list */
-		} else if (regnum + szty(p->n_type) <= 6) {
-			r = talloc();
-			*r = *p;
-			r = buildtree(ASSIGN, mkreg(r, regnum), promote_arg(r));
-			*p = *r;
-			p1nfree(r);
-		}
-		r = p;
+		return;
 	}
-	regnum += szty(r->n_type);
+	if (p->n_op == STARG) {
+		regnum = 6;
+		return;
+	}
+	if (regnum < 6 && szty(p->n_type) == 1) {
+		r = talloc();
+		*r = *p;
+		r = buildtree(ASSIGN, mkreg(r, regnum), promote_arg(r));
+		*p = *r;
+		p1nfree(r);
+		regnum += szty(r->n_type);
+	} else {
+		regnum = 6;
+		/* FIXME: promote arg */
+		r = talloc();
+		*r = *p;
+		p->n_op = FUNARG;
+		p->n_left = r;
+		p->n_left = promote_arg(p->n_left);
+		p->n_type = p->n_left->n_type;
+	}
 }
 
 /*
