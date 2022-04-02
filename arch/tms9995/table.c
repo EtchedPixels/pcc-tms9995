@@ -668,13 +668,13 @@ struct optab table[] = {
 	SAREG,	TUCHAR|TUNSIGNED,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
-		"srl	AL,AR\n", },
+		"ci	AR,0\njeq	2\nsrl	AL,AR\n", },
 
 { RS,	INAREG|FOREFF,
 	SAREG,	TUCHAR|TUNSIGNED,
 	SAREG,	TCHAR|TUCHAR,
 	NSPECIAL,	RLEFT,
-		"swpb	r0\nsrl	AL,AR\nswpb	r0\n", },
+		"swpb	r0\nci	AR,0\njeq	2\nsrl	AL,AR\nswpb	r0\n", },
 
 /* And signed */
 
@@ -688,13 +688,13 @@ struct optab table[] = {
 	SAREG,	TCHAR|TINT,
 	SAREG,	TWORD,
 	NSPECIAL,	RLEFT,
-		"sra	AL,AR\n", },
+		"ci	AR,0\njeq	2\nsra	AL,AR\n", },
 
 { RS,	INAREG|FOREFF,
 	SAREG,	TUCHAR|TUNSIGNED,
 	SAREG,	TCHAR|TUCHAR,
 	NSPECIAL,	RLEFT,
-		"swpb	r0\nsra	AL,AR\nswpb	r0\n", },
+		"swpb	r0\nci	AR,0\njeq	2\nsra	AL,AR\nswpb	r0\n", },
 
 /* And 32bit */
 
