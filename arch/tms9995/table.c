@@ -839,7 +839,7 @@ struct optab table[] = {
 	SAREG,		TCHAR|TUCHAR,
 	SCON,		TCHAR|TUCHAR,
 		0,	RDEST|RESCC,
-		"li	AL, CR * 256\n", },
+		"li	AL, CR*256\n", },
 
 { ASSIGN,	FOREFF|INAREG|FORCC,
 	ARONS,	TCHAR|TUCHAR,
@@ -1251,7 +1251,7 @@ struct optab table[] = {
 	SANY,	TANY,
 	SCON,		TCHAR|TUCHAR,
 		NAREG,	RESC1,
-		"li	A1, CL * 256\n", },
+		"li	A1, CL*256\n", },
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
